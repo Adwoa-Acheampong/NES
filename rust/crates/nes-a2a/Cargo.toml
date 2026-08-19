@@ -1,0 +1,10 @@
+[package]
+name = "nes-a2a"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nes-core = { path = "../nes-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }

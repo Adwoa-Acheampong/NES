@@ -1,0 +1,36 @@
+{
+  "_comment": "OpenClaw custom command descriptor for the Black Star Legacy render pipeline. Register this with your OpenClaw gateway (see pipeline/README.md section 5). The exact registration syntax depends on your OpenClaw version; this captures the intent the agent needs.",
+
+  "name": "blkk_render",
+  "description": "Render a Black Star Legacy 3D portfolio asset in Unreal Engine 5.8 and publish a 360 virtual tour (and optionally a Pixel Streaming build) to the website. Trigger when the user asks to render/build/publish a tour for a named project.",
+
+  "trigger_examples": [
+    "render the Modern Villa and put a 360 tour live",
+    "I dropped the Lamborghini model in the hot folder, run the pipeline",
+    "build a flagship pixel-streaming tour for the Havilah Estate"
+  ],
+
+  "parameters": {
+    "project_name": { "type": "string", "required": true, "description": "Human project name, e.g. 'Modern Villa'" },
+    "asset_path":   { "type": "string", "required": false, "description": "Path to the asset; defaults to the newest file in the hot folder" },
+    "category":     { "type": "string", "enum": ["architecture", "automotive"], "required": false },
+    "flagship":     { "type": "boolean", "required": false, "description": "Also build a Pixel Streaming package" }
+  },
+
+  "command": {
+    "windows": "cmd /c \"cd /d \"%BLKK_SITE%\" && python pipeline\\run_pipeline.py --project-name \"{project_name}\" {category_flag} {asset_flag} {flagship_flag}\"",
+    "posix":   "bash -lc 'cd \"$BLKK_SITE\" && python3 pipeline/run_pipeline.py --project-name \"{project_name}\" {category_flag} {asset_flag} {flagship_flag}'"
+  },
+
+  "env": {
+    "BLKK_SITE": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/blkklegacy web platform"
+  },
+
+  "returns": "The agent should relay the line beginning PIPELINE_SUMMARY_JSON= (or the trailing human message) back to the user over the messenger.",
+
+  "notes": [
+    "If asset_path is omitted, OpenClaw should resolve the newest accepted file in pipeline/hot_folder before substituting {asset_flag}.",
+    "Long-running (UE render can take many minutes). Run detached and post the summary when PIPELINE_SUMMARY_JSON appears in stdout/the logs/ file.",
+    "category_flag => '--category <value>' or empty; asset_flag => '--asset \"<path>\"' or empty; flagship_flag => '--flagship' or empty."
+  ]
+}

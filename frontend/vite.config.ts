@@ -19,8 +19,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'OpenJarvis',
-        short_name: 'Jarvis',
+        name: 'NES',
+        short_name: 'NES',
         description: 'On-device AI assistant',
         theme_color: '#161618',
         background_color: '#161618',
@@ -37,7 +37,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: '../src/openjarvis/server/static',
+    outDir: '../src/nes/server/static',
     emptyOutDir: true,
     minify: 'esbuild',
     rollupOptions: {

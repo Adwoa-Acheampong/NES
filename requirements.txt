@@ -1,0 +1,9 @@
+# Python deps for the host-side pipeline (NOT for UE's embedded Python).
+# Install with:  python -m pip install -r pipeline/requirements.txt
+#
+# UE's render script (pipeline/ue/render_pipeline.py) runs inside Unreal's
+# bundled Python and only uses the built-in `unreal` module — no pip needed there.
+
+watchdog>=4.0.0        # folder watcher (hot_folder trigger)
+Pillow>=10.0.0         # image optimize/resize + panorama sanity checks
+paramiko>=3.4.0        # SFTP upload (only needed if publish.method == "sftp")

@@ -10,9 +10,9 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from openjarvis.core.events import EventBus, EventType  # noqa: E402
-from openjarvis.core.types import Role  # noqa: E402
-from openjarvis.server.app import create_app  # noqa: E402
+from nes.core.events import EventBus, EventType  # noqa: E402
+from nes.core.types import Role  # noqa: E402
+from nes.server.app import create_app  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,7 +48,7 @@ def _make_engine(content="Hello from server", models=None):
 
 
 def _make_agent(content="Hello from agent"):
-    from openjarvis.agents._stubs import AgentResult
+    from nes.agents._stubs import AgentResult
 
     agent = MagicMock()
     agent.agent_id = "mock"
@@ -57,9 +57,9 @@ def _make_agent(content="Hello from agent"):
 
 
 def _test_config():
-    from openjarvis.core.config import JarvisConfig
+    from nes.core.config import NESConfig
 
-    cfg = JarvisConfig()
+    cfg = NESConfig()
     cfg.analytics.enabled = False
     cfg.traces.enabled = False
     return cfg
@@ -423,8 +423,8 @@ class TestChatCompletions:
         The fix unwraps the engine via `engine._inner` before passing it
         to `instrumented_generate`. This test pins that contract.
         """
-        from openjarvis.core.events import EventBus, EventType
-        from openjarvis.telemetry.instrumented_engine import InstrumentedEngine
+        from nes.core.events import EventBus, EventType
+        from nes.telemetry.instrumented_engine import InstrumentedEngine
 
         # Build a fresh engine + bus and explicitly wrap with
         # InstrumentedEngine (mirrors the production app construction).
@@ -468,7 +468,7 @@ class TestChatCompletions:
         # would carry no version stamp and `current_methodology_only`
         # would drop it from leaderboard sums entirely. Pin that
         # contract — see the adversarial review on PR #498.
-        from openjarvis.core.types import TOKEN_COUNTING_VERSION
+        from nes.core.types import TOKEN_COUNTING_VERSION
 
         rec = received_records[0].data["record"]
         assert rec.token_counting_version == TOKEN_COUNTING_VERSION, (
@@ -537,9 +537,9 @@ class TestChatCompletions:
 
     def test_streaming_without_client_tools_uses_configured_agent(self):
         """Server-side tools remain available to streaming web clients (#735)."""
-        from openjarvis.agents.orchestrator import OrchestratorAgent
-        from openjarvis.core.types import ToolResult
-        from openjarvis.tools._stubs import BaseTool, ToolSpec
+        from nes.agents.orchestrator import OrchestratorAgent
+        from nes.core.types import ToolResult
+        from nes.tools._stubs import BaseTool, ToolSpec
 
         executions: list[str] = []
 
@@ -633,8 +633,8 @@ class TestChatCompletions:
         agent's own tool loop, and word-splits generic filler content,
         dropping the tool_calls the caller asked for.
         """
-        from openjarvis.core.events import EventBus
-        from openjarvis.engine._stubs import StreamChunk
+        from nes.core.events import EventBus
+        from nes.engine._stubs import StreamChunk
 
         engine = _make_engine()
 
@@ -772,7 +772,7 @@ def _make_capturing_engine(captured: list):
     async def mock_stream_full(
         messages, *, model, temperature=0.7, max_tokens=1024, **kw
     ):
-        from openjarvis.engine._stubs import StreamChunk
+        from nes.engine._stubs import StreamChunk
 
         captured.append(messages)
         yield StreamChunk(content="ok", finish_reason="stop")
@@ -783,10 +783,10 @@ def _make_capturing_engine(captured: list):
 
 
 def _identity_config():
-    from openjarvis.core.config import JarvisConfig
+    from nes.core.config import NESConfig
 
-    cfg = JarvisConfig()
-    cfg.agent.default_system_prompt = "You are OpenJarvis."
+    cfg = NESConfig()
+    cfg.agent.default_system_prompt = "You are NES."
     cfg.analytics.enabled = False
     return cfg
 
@@ -796,7 +796,7 @@ class TestIdentityPromptInjection:
 
     The desktop UI posts only user/assistant turns to the
     OpenAI-compatible ``/v1/chat/completions`` endpoint, so the engine never
-    saw OpenJarvis's identity system prompt and the model answered from its
+    saw NES's identity system prompt and the model answered from its
     training identity ("I'm Claude", "I am Qwen", ...). The engine-direct
     server handlers must now inject ``agent.default_system_prompt`` whenever
     the client omits a system message — and must NOT inject a second one when
@@ -822,7 +822,7 @@ class TestIdentityPromptInjection:
         assert captured, "engine.stream was never called"
         msgs = captured[-1]
         assert msgs[0].role.value == "system"
-        assert "OpenJarvis" in msgs[0].content
+        assert "NES" in msgs[0].content
 
     def test_stream_no_double_injection_when_client_supplies_system(self):
         captured: list = []
@@ -849,11 +849,11 @@ class TestIdentityPromptInjection:
 
     def test_stream_uses_grounded_agent_result_without_replay(self):
         """Regression for #734: web streaming emits the agent's final answer."""
-        from openjarvis.core.events import EventBus
+        from nes.core.events import EventBus
 
         captured: list = []
         engine = _make_capturing_engine(captured)
-        agent = _make_agent(content="My name is Jarvis Prime.")
+        agent = _make_agent(content="My name is NES Prime.")
         agent._tools = [object()]
         agent._engine = engine
         client = TestClient(
@@ -884,7 +884,7 @@ class TestIdentityPromptInjection:
             choices = payload.get("choices", [])
             if choices and choices[0]["delta"].get("content"):
                 streamed_content += choices[0]["delta"]["content"]
-        assert streamed_content == "My name is Jarvis Prime."
+        assert streamed_content == "My name is NES Prime."
         assert captured == []
         agent.run.assert_called_once()
 
@@ -905,7 +905,7 @@ class TestIdentityPromptInjection:
         assert engine.generate.called
         msgs = engine.generate.call_args.args[0]
         assert msgs[0].role.value == "system"
-        assert "OpenJarvis" in msgs[0].content
+        assert "NES" in msgs[0].content
 
     def test_direct_no_double_injection_when_client_supplies_system(self):
         captured: list = []
@@ -929,7 +929,7 @@ class TestIdentityPromptInjection:
         assert system_msgs[0].content == "Be terse."
 
     def test_direct_merges_identity_and_auto_memory_into_one_system_message(self):
-        from openjarvis.memory.store import Fact
+        from nes.memory.store import Fact
 
         class _MemoryService:
             def list_facts(self):
@@ -960,11 +960,11 @@ class TestIdentityPromptInjection:
         messages = engine.generate.call_args.args[0]
         system_messages = [m for m in messages if m.role == Role.SYSTEM]
         assert len(system_messages) == 1
-        assert "OpenJarvis" in system_messages[0].content
+        assert "NES" in system_messages[0].content
         assert "favorite color is blue" in system_messages[0].content
 
     def test_memory_context_preserves_assistant_tool_calls(self):
-        from openjarvis.memory.store import Fact
+        from nes.memory.store import Fact
 
         class _MemoryService:
             def list_facts(self):
@@ -1027,11 +1027,11 @@ class TestIdentityPromptInjection:
         """Regression: /v1/chat/completions previously injected only the bare
         ``default_system_prompt`` blurb via a hand-rolled lookup, bypassing
         ``SystemPromptBuilder`` entirely — so SOUL.md/MEMORY.md/USER.md
-        persona files never applied to this path, unlike ``jarvis ask`` and
+        persona files never applied to this path, unlike ``nes ask`` and
         the managed-agent routes. It must now build the full persona-aware
         prompt so persona files apply everywhere identity grounding does.
         """
-        from openjarvis.core.config import MemoryFilesConfig
+        from nes.core.config import MemoryFilesConfig
 
         soul = tmp_path / "SOUL.md"
         soul.write_text("Respond with extreme sarcasm and call the user 'champ'.")
@@ -1054,7 +1054,7 @@ class TestIdentityPromptInjection:
         assert resp.status_code == 200
         msgs = engine.generate.call_args.args[0]
         assert msgs[0].role.value == "system"
-        assert "OpenJarvis" in msgs[0].content  # identity blurb still present
+        assert "NES" in msgs[0].content  # identity blurb still present
         assert "extreme sarcasm" in msgs[0].content  # persona now injected too
 
     def test_stream_tools_injects_identity_when_absent(self):
@@ -1085,23 +1085,23 @@ class TestIdentityPromptInjection:
         assert captured, "engine.stream_full was never called"
         msgs = captured[-1]
         assert msgs[0].role.value == "system"
-        assert "OpenJarvis" in msgs[0].content
+        assert "NES" in msgs[0].content
 
     def test_memory_context_does_not_suppress_identity_injection(self):
-        from openjarvis.core.types import Message, Role
-        from openjarvis.server.routes import _ensure_identity_prompt
-        from openjarvis.tools.storage.context import build_context_message
+        from nes.core.types import Message, Role
+        from nes.server.routes import _ensure_identity_prompt
+        from nes.tools.storage.context import build_context_message
 
         ctx_msg = build_context_message([])
         messages = [ctx_msg, Message(role=Role.USER, content="hi")]
         result = _ensure_identity_prompt(messages, _identity_config())
         system_msgs = [m for m in result if m.role == Role.SYSTEM]
         assert len(system_msgs) == 2
-        assert any("OpenJarvis" in m.content for m in system_msgs)
+        assert any("NES" in m.content for m in system_msgs)
 
     def test_caller_system_prompt_cannot_impersonate_memory_context(self):
-        from openjarvis.core.types import Message, Role
-        from openjarvis.server.routes import _ensure_identity_prompt
+        from nes.core.types import Message, Role
+        from nes.server.routes import _ensure_identity_prompt
 
         caller_prompt = Message(
             role=Role.SYSTEM,
@@ -1160,7 +1160,7 @@ class TestModelsEndpoint:
         )
 
         with patch(
-            "openjarvis.server.cloud_router.list_local_models",
+            "nes.server.cloud_router.list_local_models",
             new_callable=AsyncMock,
         ) as list_local_models:
             list_local_models.return_value = []
@@ -1187,7 +1187,7 @@ class TestModelsEndpoint:
             yield "wrong backend"
 
         with patch(
-            "openjarvis.server.cloud_router.stream_cloud",
+            "nes.server.cloud_router.stream_cloud",
             return_value=direct_cloud_tokens(),
         ) as stream_cloud:
             client = TestClient(app)
@@ -1261,13 +1261,13 @@ def _traces_enabled_config(tmp_path):
 
     ``create_app`` only builds a trace store when ``config.traces.enabled`` is
     true (server/app.py). Relying on the ambient ``load_config()`` made these
-    tests fail on any machine whose ``~/.openjarvis/config.toml`` disables
+    tests fail on any machine whose ``~/.nes/config.toml`` disables
     traces; pinning an explicit config + tmp db keeps them hermetic and
     parallel-safe under ``pytest -n auto``.
     """
-    from openjarvis.core.config import JarvisConfig
+    from nes.core.config import NESConfig
 
-    cfg = JarvisConfig()
+    cfg = NESConfig()
     cfg.traces.enabled = True
     cfg.traces.db_path = str(tmp_path / "traces.db")
     cfg.analytics.enabled = False
@@ -1285,7 +1285,7 @@ class TestTraceRecording:
         IntegrityError on the trace_id primary key and the request would 500 —
         so asserting 200 + count == 1 guards that double-save regression.
         """
-        from openjarvis.core.events import EventBus
+        from nes.core.events import EventBus
 
         engine = _make_engine()
         agent = _make_agent(content="traced reply")

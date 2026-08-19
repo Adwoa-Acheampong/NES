@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 import pytest
 
-from openjarvis.cli import _version_check
-from openjarvis.cli._version_check import (
+from nes.cli import _version_check
+from nes.cli._version_check import (
     _check_disabled,
     _config_disabled,
     _fetch_latest_stable,
@@ -24,7 +24,7 @@ def _clean_env(monkeypatch, tmp_path):
     for v in ("OPENJARVIS_NO_UPDATE_CHECK", "CI", "OPENJARVIS_CONFIG"):
         monkeypatch.delenv(v, raising=False)
     # Point config + cache at empty tmp paths so tests don't see the
-    # developer's real ~/.openjarvis state.
+    # developer's real ~/.nes state.
     monkeypatch.setenv("OPENJARVIS_CONFIG", str(tmp_path / "no-config.toml"))
     monkeypatch.setattr(_version_check, "_CACHE_PATH", tmp_path / "version-check.json")
 
@@ -61,7 +61,7 @@ class TestCheckDisabled:
         assert _check_disabled() is False
 
     @pytest.mark.parametrize("value", ["1", "true", "yes", "on", "anything"])
-    def test_jarvis_no_update_check_disables(self, monkeypatch, value):
+    def test_nes_no_update_check_disables(self, monkeypatch, value):
         monkeypatch.setenv("OPENJARVIS_NO_UPDATE_CHECK", value)
         assert _check_disabled() is True
 
@@ -112,7 +112,7 @@ class TestConfigDisabled:
         monkeypatch.setenv("OPENJARVIS_CONFIG", str(cfg))
         assert _config_disabled() is True
 
-    def test_openjarvis_config_env_override(self, monkeypatch, tmp_path):
+    def test_nes_config_env_override(self, monkeypatch, tmp_path):
         """OPENJARVIS_CONFIG should redirect the lookup, matching core.config."""
         cfg = tmp_path / "alt.toml"
         cfg.write_text("[updates]\nauto_update = false\n")
@@ -221,30 +221,30 @@ class TestGetLatestVersion:
 
 
 class TestCheckForUpdates:
-    @patch("openjarvis.cli._version_check._do_check")
+    @patch("nes.cli._version_check._do_check")
     def test_runs_for_ask_command(self, mock_do):
         check_for_updates("ask")
         mock_do.assert_called_once()
 
-    @patch("openjarvis.cli._version_check._do_check")
+    @patch("nes.cli._version_check._do_check")
     def test_runs_for_doctor_command(self, mock_do):
         """Widened list: doctor wasn't checked before."""
         check_for_updates("doctor")
         mock_do.assert_called_once()
 
-    @patch("openjarvis.cli._version_check._do_check")
+    @patch("nes.cli._version_check._do_check")
     def test_skips_unknown_command(self, mock_do):
         check_for_updates("_bootstrap")
         mock_do.assert_not_called()
 
-    @patch("openjarvis.cli._version_check._do_check")
+    @patch("nes.cli._version_check._do_check")
     def test_ci_env_short_circuits_widely(self, mock_do, monkeypatch):
         monkeypatch.setenv("CI", "1")
         check_for_updates("ask")
         mock_do.assert_not_called()
 
     @patch(
-        "openjarvis.cli._version_check._do_check",
+        "nes.cli._version_check._do_check",
         side_effect=Exception("boom"),
     )
     def test_exception_in_do_check_never_propagates(self, mock_do):

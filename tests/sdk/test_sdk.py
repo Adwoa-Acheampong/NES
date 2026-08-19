@@ -1,4 +1,4 @@
-"""Tests for the Python SDK — Jarvis class and MemoryHandle."""
+"""Tests for the Python SDK — NES class and MemoryHandle."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import openjarvis
-from openjarvis.core.config import JarvisConfig
-from openjarvis.sdk import Jarvis, MemoryHandle
+import nes
+from nes.core.config import NESConfig
+from nes.sdk import NES, MemoryHandle
 
 
 def _make_engine(content="Hello from SDK"):
@@ -25,47 +25,47 @@ def _make_engine(content="Hello from SDK"):
     return engine
 
 
-class TestJarvisInit:
+class TestNESInit:
     def test_default_config(self):
-        j = Jarvis(config=JarvisConfig())
+        j = NES(config=NESConfig())
         assert j.config is not None
         j.close()
 
     def test_custom_config(self):
-        cfg = JarvisConfig()
-        j = Jarvis(config=cfg)
+        cfg = NESConfig()
+        j = NES(config=cfg)
         assert j.config is cfg
         j.close()
 
     def test_version_property(self):
-        j = Jarvis(config=JarvisConfig())
-        assert j.version == openjarvis.__version__
+        j = NES(config=NESConfig())
+        assert j.version == nes.__version__
         j.close()
 
     def test_engine_key_override(self):
-        j = Jarvis(config=JarvisConfig(), engine_key="custom")
+        j = NES(config=NESConfig(), engine_key="custom")
         assert j._engine_key == "custom"
         j.close()
 
     def test_model_override(self):
-        j = Jarvis(config=JarvisConfig(), model="my-model")
+        j = NES(config=NESConfig(), model="my-model")
         assert j._model_override == "my-model"
         j.close()
 
 
-class TestJarvisAsk:
+class TestNESAsk:
     def test_ask_returns_string(self):
         engine = _make_engine("The answer is 42.")
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig(), model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig(), model="test-model")
             result = j.ask("What is the answer?")
             assert result == "The answer is 42."
             j.close()
 
     def test_ask_with_model_override(self):
         engine = _make_engine()
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig())
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig())
             j.ask("Hello", model="custom-model")
             # Verify engine.generate was called with the custom model
             call_kwargs = engine.generate.call_args
@@ -73,8 +73,8 @@ class TestJarvisAsk:
             j.close()
 
     def test_ask_with_agent(self):
-        from openjarvis.agents._stubs import AgentResult
-        from openjarvis.core.registry import AgentRegistry
+        from nes.agents._stubs import AgentResult
+        from nes.core.registry import AgentRegistry
 
         engine = _make_engine()
 
@@ -89,20 +89,20 @@ class TestJarvisAsk:
 
         AgentRegistry.register_value("mock-agent", MockAgent)
 
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig(), model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig(), model="test-model")
             result = j.ask("Hello", agent="mock-agent")
             assert result == "Agent response"
             j.close()
 
     def test_ask_with_agent_wires_persona(self, tmp_path):
-        from openjarvis.agents.simple import SimpleAgent
-        from openjarvis.core.registry import AgentRegistry
+        from nes.agents.simple import SimpleAgent
+        from nes.core.registry import AgentRegistry
 
         soul = tmp_path / "SOUL.md"
         soul.write_text("SDK_PERSONA_SENTINEL", encoding="utf-8")
 
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         cfg.memory_files.soul_path = str(soul)
         cfg.memory_files.memory_path = ""
         cfg.memory_files.user_path = ""
@@ -112,24 +112,24 @@ class TestJarvisAsk:
             AgentRegistry.register_value("simple", SimpleAgent)
 
         engine = _make_engine()
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=cfg, model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=cfg, model="test-model")
             j.ask("Hello", agent="simple")
             messages = engine.generate.call_args.args[0]
             assert "SDK_PERSONA_SENTINEL" in messages[0].content
             j.close()
 
     def test_ask_no_engine_raises(self):
-        with patch("openjarvis.sdk.get_engine", return_value=None):
-            j = Jarvis(config=JarvisConfig())
+        with patch("nes.sdk.get_engine", return_value=None):
+            j = NES(config=NESConfig())
             with pytest.raises(RuntimeError, match="No inference engine"):
                 j.ask("Hello")
             j.close()
 
     def test_ask_full_returns_dict(self):
         engine = _make_engine("Full response")
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig(), model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig(), model="test-model")
             result = j.ask_full("Hello")
             assert isinstance(result, dict)
             assert "content" in result
@@ -138,26 +138,26 @@ class TestJarvisAsk:
             j.close()
 
 
-class TestJarvisModels:
+class TestNESModels:
     def test_list_models(self):
         engine = _make_engine()
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig())
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig())
             models = j.list_models()
             assert models == ["test-model"]
             j.close()
 
     def test_list_engines(self):
-        from openjarvis.core.registry import EngineRegistry
+        from nes.core.registry import EngineRegistry
 
         EngineRegistry.register_value("test-eng", object)
-        j = Jarvis(config=JarvisConfig())
+        j = NES(config=NESConfig())
         engines = j.list_engines()
         assert "test-eng" in engines
         j.close()
 
     def test_list_engines_empty(self):
-        j = Jarvis(config=JarvisConfig())
+        j = NES(config=NESConfig())
         engines = j.list_engines()
         assert isinstance(engines, list)
         j.close()
@@ -165,13 +165,13 @@ class TestJarvisModels:
 
 class TestMemoryHandle:
     def test_lazy_backend_init(self):
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         assert handle._backend is None
         handle.close()
 
     def test_close_idempotent(self):
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         handle.close()
         handle.close()  # should not raise
@@ -186,7 +186,7 @@ class TestMemoryHandle:
         mock_backend = MagicMock()
         mock_backend.store.return_value = "doc-1"
 
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         handle._backend = mock_backend
 
@@ -204,7 +204,7 @@ class TestMemoryHandle:
         mock_result.metadata = {}
         mock_backend.retrieve.return_value = [mock_result]
 
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         handle._backend = mock_backend
 
@@ -217,7 +217,7 @@ class TestMemoryHandle:
         mock_backend = MagicMock()
         mock_backend.retrieve.return_value = []
 
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         handle._backend = mock_backend
 
@@ -229,7 +229,7 @@ class TestMemoryHandle:
         mock_backend = MagicMock()
         mock_backend.count.return_value = 5
 
-        cfg = JarvisConfig()
+        cfg = NESConfig()
         handle = MemoryHandle(cfg)
         handle._backend = mock_backend
 
@@ -239,7 +239,7 @@ class TestMemoryHandle:
         handle.close()
 
 
-class TestJarvisStreaming:
+class TestNESStreaming:
     @pytest.mark.asyncio
     async def test_ask_stream_yields_tokens(self):
         engine = _make_engine()
@@ -250,8 +250,8 @@ class TestJarvisStreaming:
 
         engine.stream = mock_stream
 
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig(), model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig(), model="test-model")
             tokens = []
             async for token in j.ask_stream("Hi"):
                 tokens.append(token)
@@ -268,8 +268,8 @@ class TestJarvisStreaming:
 
         engine.stream = mock_stream
 
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig(), model="test-model")
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig(), model="test-model")
             chunks = []
             async for chunk in j.ask_full_stream("Hi"):
                 chunks.append(chunk)
@@ -299,8 +299,8 @@ class TestJarvisStreaming:
 
         engine.stream = mock_stream
 
-        with patch("openjarvis.sdk.get_engine", return_value=("mock", engine)):
-            j = Jarvis(config=JarvisConfig())
+        with patch("nes.sdk.get_engine", return_value=("mock", engine)):
+            j = NES(config=NESConfig())
             tokens = []
             async for token in j.ask_stream("Hi", model="custom-model"):
                 tokens.append(token)
@@ -309,13 +309,13 @@ class TestJarvisStreaming:
             j.close()
 
 
-class TestJarvisLifecycle:
+class TestNESLifecycle:
     def test_close_releases_resources(self):
-        j = Jarvis(config=JarvisConfig())
+        j = NES(config=NESConfig())
         j.close()
         assert j._engine is None
 
     def test_double_close_safe(self):
-        j = Jarvis(config=JarvisConfig())
+        j = NES(config=NESConfig())
         j.close()
         j.close()  # should not raise

@@ -5,11 +5,11 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.types import Message, Role
-from openjarvis.memory.store import Fact
-from openjarvis.tools.storage._stubs import MemoryBackend, RetrievalResult
-from openjarvis.tools.storage.context import (
+from nes.core.events import EventBus, EventType
+from nes.core.types import Message, Role
+from nes.memory.store import Fact
+from nes.tools.storage._stubs import MemoryBackend, RetrievalResult
+from nes.tools.storage.context import (
     ContextConfig,
     build_context_message,
     format_context,
@@ -201,7 +201,7 @@ def test_inject_context_prioritizes_newest_facts_within_token_budget():
 
 def test_inject_context_merges_with_existing_system_message():
     messages = [
-        Message(role=Role.SYSTEM, content="You are OpenJarvis."),
+        Message(role=Role.SYSTEM, content="You are NES."),
         Message(role=Role.USER, content="What is my favorite color?"),
     ]
     facts = [Fact(text="The user's favorite color is blue")]
@@ -210,9 +210,9 @@ def test_inject_context_merges_with_existing_system_message():
 
     system_messages = [m for m in augmented if m.role == Role.SYSTEM]
     assert len(system_messages) == 1
-    assert "You are OpenJarvis." in system_messages[0].content
+    assert "You are NES." in system_messages[0].content
     assert "favorite color is blue" in system_messages[0].content
-    assert messages[0].content == "You are OpenJarvis."
+    assert messages[0].content == "You are NES."
 
 
 def test_inject_context_collapses_multiple_system_messages():
@@ -283,7 +283,7 @@ def test_inject_context_publishes_event():
     backend = _FakeMemory(results)
     messages = [Message(role=Role.USER, content="hello")]
 
-    import openjarvis.tools.storage.context as mod
+    import nes.tools.storage.context as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus

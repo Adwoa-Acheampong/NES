@@ -2767,7 +2767,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openjarvis-desktop"
+name = "nes-desktop"
 version = "1.0.1"
 dependencies = [
  "dispatch",

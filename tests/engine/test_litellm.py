@@ -5,9 +5,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest import mock
 
-from openjarvis.core.registry import EngineRegistry
-from openjarvis.core.types import Message, Role
-from openjarvis.engine.litellm import LiteLLMEngine
+from nes.core.registry import EngineRegistry
+from nes.core.types import Message, Role
+from nes.engine.litellm import LiteLLMEngine
 
 
 class TestLiteLLMEngineHealth:

@@ -48,10 +48,10 @@ def _make_adapter(name: str) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_returns_tools_from_mcp_server(mock_load_config: MagicMock):
     """With a mocked MCP server, discovered tools are returned."""
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     server_cfg = [{"name": "test-server", "url": "http://localhost:9999"}]
     mock_load_config.return_value = _make_config(
@@ -61,9 +61,9 @@ def test_returns_tools_from_mcp_server(mock_load_config: MagicMock):
     mock_adapter = _make_adapter("get_weather")
 
     with (
-        patch("openjarvis.mcp.transport.StreamableHTTPTransport"),
-        patch("openjarvis.mcp.client.MCPClient"),
-        patch("openjarvis.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("nes.mcp.transport.StreamableHTTPTransport"),
+        patch("nes.mcp.client.MCPClient"),
+        patch("nes.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         MockProvider.return_value.discover.return_value = [mock_adapter]
 
@@ -75,10 +75,10 @@ def test_returns_tools_from_mcp_server(mock_load_config: MagicMock):
     assert "get_weather" in adapters
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_caches_successful_discovery(mock_load_config: MagicMock):
     """Second call returns cached result without re-discovering."""
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     server_cfg = [{"name": "test-server", "url": "http://localhost:9999"}]
     mock_load_config.return_value = _make_config(
@@ -88,9 +88,9 @@ def test_caches_successful_discovery(mock_load_config: MagicMock):
     mock_adapter = _make_adapter("cached_tool")
 
     with (
-        patch("openjarvis.mcp.transport.StreamableHTTPTransport"),
-        patch("openjarvis.mcp.client.MCPClient"),
-        patch("openjarvis.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("nes.mcp.transport.StreamableHTTPTransport"),
+        patch("nes.mcp.client.MCPClient"),
+        patch("nes.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         MockProvider.return_value.discover.return_value = [mock_adapter]
 
@@ -107,10 +107,10 @@ def test_caches_successful_discovery(mock_load_config: MagicMock):
         assert MockProvider.return_value.discover.call_count == discover_call_count
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_does_not_cache_empty_results(mock_load_config: MagicMock):
     """Failed/empty discovery is not cached so it can be retried."""
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     server_cfg = [{"name": "failing-server", "url": "http://localhost:9999"}]
     mock_load_config.return_value = _make_config(
@@ -118,9 +118,9 @@ def test_does_not_cache_empty_results(mock_load_config: MagicMock):
     )
 
     with (
-        patch("openjarvis.mcp.transport.StreamableHTTPTransport"),
-        patch("openjarvis.mcp.client.MCPClient") as MockClient,
-        patch("openjarvis.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("nes.mcp.transport.StreamableHTTPTransport"),
+        patch("nes.mcp.client.MCPClient") as MockClient,
+        patch("nes.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         # First call: discovery returns empty
         MockProvider.return_value.discover.return_value = []
@@ -143,10 +143,10 @@ def test_does_not_cache_empty_results(mock_load_config: MagicMock):
         assert tools2[0]["function"]["name"] == "retry_tool"
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_handles_config_load_failure(mock_load_config: MagicMock):
     """Config load failure returns empty, no crash."""
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     mock_load_config.side_effect = RuntimeError("config broken")
 
@@ -157,11 +157,11 @@ def test_handles_config_load_failure(mock_load_config: MagicMock):
     assert adapters == {}
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_uses_preloaded_full_system_pool(mock_load_config: MagicMock):
     """Server and scheduled paths reuse one unfiltered MCP discovery."""
 
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     adapter = _make_adapter("preloaded_tool")
     app_state = _FakeAppState()
@@ -174,11 +174,11 @@ def test_uses_preloaded_full_system_pool(mock_load_config: MagicMock):
     assert adapters == {"preloaded_tool": adapter}
 
 
-@patch("openjarvis.core.config.load_config")
+@patch("nes.core.config.load_config")
 def test_preloaded_duplicate_names_are_first_wins(mock_load_config: MagicMock):
     """SSE and executor paths choose the same adapter on name collisions."""
 
-    from openjarvis.server.agent_manager_routes import _get_mcp_tools
+    from nes.server.agent_manager_routes import _get_mcp_tools
 
     first = _make_adapter("duplicate")
     second = _make_adapter("duplicate")
@@ -197,9 +197,9 @@ def test_app_shutdown_stops_scheduler_before_closing_shared_mcp_clients() -> Non
 
     from fastapi.testclient import TestClient
 
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.server.agent_manager_routes import _start_managed_worker
-    from openjarvis.server.app import create_app
+    from nes.core.config import NESConfig
+    from nes.server.agent_manager_routes import _start_managed_worker
+    from nes.server.app import create_app
 
     events: list[str] = []
     release_worker = threading.Event()
@@ -225,7 +225,7 @@ def test_app_shutdown_stops_scheduler_before_closing_shared_mcp_clients() -> Non
     mcp_client.close.side_effect = _close_mcp
     memory_backend.close.side_effect = lambda: events.append("memory")
     channel_bridge.disconnect.side_effect = lambda: events.append("channel")
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
 
@@ -271,12 +271,12 @@ def test_shutdown_interrupts_mcp_client_during_lazy_initialization() -> None:
 
     from fastapi.testclient import TestClient
 
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.server.agent_manager_routes import (
+    from nes.core.config import NESConfig
+    from nes.server.agent_manager_routes import (
         _get_mcp_tools,
         _start_managed_worker,
     )
-    from openjarvis.server.app import create_app
+    from nes.server.app import create_app
 
     initialize_started = threading.Event()
     initialize_released = threading.Event()
@@ -299,7 +299,7 @@ def test_shutdown_interrupts_mcp_client_during_lazy_initialization() -> None:
             initialize_released.set()
 
     client = _BlockingClient()
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(MagicMock(), "test-model", config=config)
@@ -314,9 +314,9 @@ def test_shutdown_interrupts_mcp_client_during_lazy_initialization() -> None:
             discovery_finished.set()
 
     with (
-        patch("openjarvis.core.config.load_config", return_value=mcp_config),
-        patch("openjarvis.mcp.transport.StreamableHTTPTransport"),
-        patch("openjarvis.mcp.client.MCPClient", return_value=client),
+        patch("nes.core.config.load_config", return_value=mcp_config),
+        patch("nes.mcp.transport.StreamableHTTPTransport"),
+        patch("nes.mcp.client.MCPClient", return_value=client),
     ):
         _start_managed_worker(
             app.state,
@@ -341,13 +341,13 @@ def test_app_shutdown_closes_lazily_created_memory_backend(monkeypatch) -> None:
 
     from fastapi.testclient import TestClient
 
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.server import agent_manager_routes as routes
-    from openjarvis.server.app import create_app
+    from nes.core.config import NESConfig
+    from nes.server import agent_manager_routes as routes
+    from nes.server.app import create_app
 
     backend = MagicMock()
     monkeypatch.setattr(routes, "_resolve_memory_backend", lambda config: backend)
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(MagicMock(), "test-model", config=config)
@@ -367,9 +367,9 @@ def test_app_shutdown_keeps_owned_memory_open_for_live_worker(monkeypatch) -> No
 
     from fastapi.testclient import TestClient
 
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.server import app as app_module
-    from openjarvis.server.agent_manager_routes import _start_managed_worker
+    from nes.core.config import NESConfig
+    from nes.server import app as app_module
+    from nes.server.agent_manager_routes import _start_managed_worker
 
     monkeypatch.setattr(app_module, "_MANAGED_SHUTDOWN_GRACE_SECONDS", 0.01)
     monkeypatch.setattr(app_module, "_MANAGED_SHUTDOWN_DRAIN_SECONDS", 0.01)
@@ -379,7 +379,7 @@ def test_app_shutdown_keeps_owned_memory_open_for_live_worker(monkeypatch) -> No
     shutdown_finished = threading.Event()
     shutdown_errors: list[BaseException] = []
     backend = MagicMock()
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
     app = app_module.create_app(
@@ -431,11 +431,11 @@ def test_app_shutdown_leaves_borrowed_memory_backend_open() -> None:
 
     from fastapi.testclient import TestClient
 
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.server.app import create_app
+    from nes.core.config import NESConfig
+    from nes.server.app import create_app
 
     backend = MagicMock()
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(

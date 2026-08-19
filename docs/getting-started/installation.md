@@ -1,13 +1,13 @@
 ---
 title: Installation
-description: Get OpenJarvis running — browser app, desktop app, CLI, or Python SDK
+description: Get NES running — browser app, desktop app, CLI, or Python SDK
 search:
   boost: 3
 ---
 
 # Installation
 
-OpenJarvis runs entirely on your hardware. Choose the interface that fits your workflow.
+NES runs entirely on your hardware. Choose the interface that fits your workflow.
 
 ---
 
@@ -19,8 +19,8 @@ your machine and the frontend connects via `localhost`.
 ### One-command setup
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
-cd OpenJarvis
+git clone https://github.com/open-nes/NES.git
+cd NES
 ./scripts/quickstart.sh
 ```
 
@@ -39,10 +39,10 @@ If you prefer to run each step yourself:
 === "Step 1: Clone and install"
 
     ```bash
-    git clone https://github.com/open-jarvis/OpenJarvis.git
-    cd OpenJarvis
+    git clone https://github.com/open-nes/NES.git
+    cd NES
     uv sync --extra desktop
-    uv run maturin develop -m rust/crates/openjarvis-python/Cargo.toml
+    uv run maturin develop -m rust/crates/nes-python/Cargo.toml
     cd frontend && npm install && cd ..
     ```
 
@@ -61,7 +61,7 @@ If you prefer to run each step yourself:
 === "Step 3: Start backend"
 
     ```bash
-    uv run jarvis serve --port 8000
+    uv run nes serve --port 8000
     ```
 
 === "Step 4: Start frontend"
@@ -77,7 +77,7 @@ Then open [http://localhost:5173](http://localhost:5173).
 
 ## Desktop App
 
-The desktop app is a native window for the OpenJarvis chat UI. All inference and backend
+The desktop app is a native window for the NES chat UI. All inference and backend
 processing happens on your local machine — the app connects to the backend you start locally.
 
 ### Setup
@@ -85,8 +85,8 @@ processing happens on your local machine — the app connects to the backend you
 **Step 1.** Start the backend (same as Browser App):
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
-cd OpenJarvis
+git clone https://github.com/open-nes/NES.git
+cd NES
 ./scripts/quickstart.sh
 ```
 
@@ -94,29 +94,29 @@ cd OpenJarvis
 
 | Platform | Download |
 |----------|----------|
-| macOS (Universal) | [:material-download: **OpenJarvis.dmg**](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_universal.dmg) |
-| Windows (64-bit) | [:material-download: **OpenJarvis-setup.exe**](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_x64-setup.exe) |
-| Linux (DEB) | [:material-download: **OpenJarvis.deb**](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_amd64.deb) |
-| Linux (RPM) | [:material-download: **OpenJarvis.rpm**](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis-1.0.1-1.x86_64.rpm) |
-| Linux (AppImage) | [:material-download: **OpenJarvis.AppImage**](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_amd64.AppImage) |
+| macOS (Universal) | [:material-download: **NES.dmg**](https://github.com/open-nes/NES/releases/download/desktop-v1.0.2/NES_1.0.1_universal.dmg) |
+| Windows (64-bit) | [:material-download: **NES-setup.exe**](https://github.com/open-nes/NES/releases/download/desktop-v1.0.2/NES_1.0.1_x64-setup.exe) |
+| Linux (DEB) | [:material-download: **NES.deb**](https://github.com/open-nes/NES/releases/download/desktop-v1.0.2/NES_1.0.1_amd64.deb) |
+| Linux (RPM) | [:material-download: **NES.rpm**](https://github.com/open-nes/NES/releases/download/desktop-v1.0.2/NES-1.0.1-1.x86_64.rpm) |
+| Linux (AppImage) | [:material-download: **NES.AppImage**](https://github.com/open-nes/NES/releases/download/desktop-v1.0.2/NES_1.0.1_amd64.AppImage) |
 
 The app connects to `http://localhost:8000` automatically.
 
 !!! warning "macOS: \"app is damaged\""
     If macOS says the app is damaged, clear the Gatekeeper quarantine flag:
     ```bash
-    xattr -cr /Applications/OpenJarvis.app
+    xattr -cr /Applications/NES.app
     ```
     This is normal for open-source apps distributed outside the App Store.
 
 !!! tip "All releases"
-    Browse all versions on the [GitHub Releases](https://github.com/open-jarvis/OpenJarvis/releases) page.
+    Browse all versions on the [GitHub Releases](https://github.com/open-nes/NES/releases) page.
 
 ### Build from source
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
-cd OpenJarvis/desktop
+git clone https://github.com/open-nes/NES.git
+cd NES/desktop
 npm install
 npm run tauri build
 ```
@@ -127,16 +127,16 @@ The built installer will be in `frontend/src-tauri/target/release/bundle/`.
 
 ## CLI
 
-The command-line interface is the fastest way to interact with OpenJarvis
+The command-line interface is the fastest way to interact with NES
 programmatically. Every feature is accessible from the terminal.
 
 ### Install
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
-cd OpenJarvis
+git clone https://github.com/open-nes/NES.git
+cd NES
 uv sync
-uv run maturin develop -m rust/crates/openjarvis-python/Cargo.toml
+uv run maturin develop -m rust/crates/nes-python/Cargo.toml
 ```
 
 Requires [Rust](https://rustup.rs/). On Python 3.14+, set `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` before the `maturin` command.
@@ -144,24 +144,24 @@ Requires [Rust](https://rustup.rs/). On Python 3.14+, set `PYO3_USE_ABI3_FORWARD
 ### Verify
 
 ```bash
-jarvis --version
-# jarvis, version 0.1.0
+nes --version
+# nes, version 0.1.0
 ```
 
 ### First commands
 
 ```bash
-jarvis ask "What is the capital of France?"
+nes ask "What is the capital of France?"
 
-jarvis ask --agent orchestrator --tools calculator "What is 137 * 42?"
+nes ask --agent orchestrator --tools calculator "What is 137 * 42?"
 
-jarvis serve --port 8000
+nes serve --port 8000
 
-jarvis doctor
+nes doctor
 
-jarvis model list
+nes model list
 
-jarvis chat
+nes chat
 ```
 
 !!! info "Inference backend required"
@@ -172,15 +172,15 @@ jarvis chat
 
 ## Python SDK
 
-For programmatic access, the `Jarvis` class provides a high-level sync API.
+For programmatic access, the `NES` class provides a high-level sync API.
 
 ### Install
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
-cd OpenJarvis
+git clone https://github.com/open-nes/NES.git
+cd NES
 uv sync
-uv run maturin develop -m rust/crates/openjarvis-python/Cargo.toml
+uv run maturin develop -m rust/crates/nes-python/Cargo.toml
 ```
 
 Requires [Rust](https://rustup.rs/). On Python 3.14+, set `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` before the `maturin` command.
@@ -188,9 +188,9 @@ Requires [Rust](https://rustup.rs/). On Python 3.14+, set `PYO3_USE_ABI3_FORWARD
 ### Quick example
 
 ```python
-from openjarvis import Jarvis
+from nes import NES
 
-j = Jarvis()
+j = NES()
 print(j.ask("Explain quicksort in two sentences."))
 j.close()
 ```
@@ -213,7 +213,7 @@ print(result["turns"])         # number of agent turns
 For full control, use the `SystemBuilder`:
 
 ```python
-from openjarvis import SystemBuilder
+from nes import SystemBuilder
 
 system = (
     SystemBuilder()
@@ -251,7 +251,7 @@ See the [Python SDK guide](../user-guide/python-sdk.md) for the full API referen
 
 ## Optional Extras
 
-OpenJarvis uses optional extras to keep the base installation lightweight.
+NES uses optional extras to keep the base installation lightweight.
 
 ### Inference Backends
 
@@ -261,7 +261,7 @@ OpenJarvis uses optional extras to keep the base installation lightweight.
 | `inference-google` | `uv sync --extra inference-google` | Google Gemini API |
 
 !!! note "Ollama, vLLM, and llama.cpp are HTTP-based"
-    These engines have no additional Python dependencies — OpenJarvis communicates over HTTP. You still need the engine software running on your machine.
+    These engines have no additional Python dependencies — NES communicates over HTTP. You still need the engine software running on your machine.
 
 ### Memory Backends
 
@@ -279,7 +279,7 @@ OpenJarvis uses optional extras to keep the base installation lightweight.
 | Extra | Install Command | Description |
 |-------|----------------|-------------|
 | `desktop` | `uv sync --extra desktop` | Desktop/API server plus local speech input |
-| `server` | `uv sync --extra server` | OpenAI-compatible API server (`jarvis serve`) |
+| `server` | `uv sync --extra server` | OpenAI-compatible API server (`nes serve`) |
 | `dev` | `uv sync --extra dev` | Development and testing tools |
 | `docs` | `uv sync --extra docs` | Documentation build tools |
 
@@ -291,7 +291,7 @@ uv sync --extra desktop --extra memory-faiss --extra inference-cloud
 
 ## Setting Up an Inference Backend
 
-OpenJarvis requires at least one inference backend. Choose the one that matches your hardware.
+NES requires at least one inference backend. Choose the one that matches your hardware.
 
 ### Ollama (Recommended)
 
@@ -305,7 +305,7 @@ The easiest way to get started. Handles model downloading and serving automatica
     ollama pull qwen3:0.6b
     ```
 
-3. Verify: `jarvis model list`
+3. Verify: `nes model list`
 
 !!! tip "Best for: Apple Silicon Macs, consumer NVIDIA GPUs, CPU-only systems"
 

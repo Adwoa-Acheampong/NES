@@ -6,10 +6,10 @@ import httpx
 import pytest
 import respx
 
-from openjarvis.core.registry import EngineRegistry
-from openjarvis.core.types import Message, Role
-from openjarvis.engine._base import EngineConnectionError
-from openjarvis.engine.openai_compat_engines import MLXEngine
+from nes.core.registry import EngineRegistry
+from nes.core.types import Message, Role
+from nes.engine._base import EngineConnectionError
+from nes.engine.openai_compat_engines import MLXEngine
 
 
 @pytest.fixture()

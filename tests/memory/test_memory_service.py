@@ -1,4 +1,4 @@
-"""Tests for the background memory service (openjarvis.memory.service)."""
+"""Tests for the background memory service (nes.memory.service)."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ import threading
 import time
 from types import SimpleNamespace
 
-from openjarvis.core.config import StorageConfig
-from openjarvis.core.events import EventBus
-from openjarvis.memory.service import (
+from nes.core.config import StorageConfig
+from nes.core.events import EventBus
+from nes.memory.service import (
     MemoryService,
     build_memory_service,
     publish_completed_exchange,
 )
-from openjarvis.memory.store import LocalFactStore
+from nes.memory.store import LocalFactStore
 
 
 def _wait_until(predicate, timeout=2.0, interval=0.01):

@@ -1,4 +1,4 @@
-"""Regression tests for #263 — ``jarvis serve`` must build the system once.
+"""Regression tests for #263 — ``nes serve`` must build the system once.
 
 serve.py used to construct all heavy components inline and then call
 ``SystemBuilder(config).build()`` a second time inside the scheduler block,
@@ -7,7 +7,7 @@ the channel and re-creating the agent manager — ~30-40s of redundant work.
 
 These tests pin the fix:
 
-1. ``SystemBuilder.build`` is never called during ``jarvis serve`` startup
+1. ``SystemBuilder.build`` is never called during ``nes serve`` startup
    (the duplicate build is gone).
 2. The ``AgentExecutor`` still receives a system exposing the attributes it
    actually reads: ``tool_executor``, ``session_store``, ``memory_backend``,
@@ -22,14 +22,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from openjarvis.cli import cli
+from nes.cli import cli
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
 
-# ``openjarvis.cli.serve`` as an attribute resolves to the click *command*
+# ``nes.cli.serve`` as an attribute resolves to the click *command*
 # (re-exported on the package); grab the real module to monkeypatch its globals.
-serve_mod = importlib.import_module("openjarvis.cli.serve")
+serve_mod = importlib.import_module("nes.cli.serve")
 
 
 def _fake_engine() -> MagicMock:
@@ -52,10 +52,10 @@ def _repopulate_registries() -> None:
     import importlib
     import sys
 
-    import openjarvis.agents  # noqa: F401
-    import openjarvis.tools  # noqa: F401
-    import openjarvis.tools.storage  # noqa: F401
-    from openjarvis.core.registry import (
+    import nes.agents  # noqa: F401
+    import nes.tools  # noqa: F401
+    import nes.tools.storage  # noqa: F401
+    from nes.core.registry import (
         AgentRegistry,
         MemoryRegistry,
         ToolRegistry,
@@ -63,7 +63,7 @@ def _repopulate_registries() -> None:
 
     if not AgentRegistry.keys():
         for mod_name in list(sys.modules):
-            if mod_name.startswith("openjarvis.agents.") and not mod_name.endswith(
+            if mod_name.startswith("nes.agents.") and not mod_name.endswith(
                 "_stubs"
             ):
                 try:
@@ -74,7 +74,7 @@ def _repopulate_registries() -> None:
     if not ToolRegistry.keys():
         for mod_name in list(sys.modules):
             if (
-                mod_name.startswith("openjarvis.tools.")
+                mod_name.startswith("nes.tools.")
                 and not mod_name.endswith("_stubs")
                 and not mod_name.endswith("agent_tools")
             ):
@@ -86,7 +86,7 @@ def _repopulate_registries() -> None:
     if not MemoryRegistry.keys():
         for mod_name in list(sys.modules):
             if mod_name.startswith(
-                "openjarvis.tools.storage."
+                "nes.tools.storage."
             ) and not mod_name.endswith("_stubs"):
                 try:
                     importlib.reload(sys.modules[mod_name])
@@ -95,17 +95,17 @@ def _repopulate_registries() -> None:
 
 
 def _run_serve(tmp_path, monkeypatch, *, build_spy, set_system_spy):
-    """Invoke ``jarvis serve`` with all heavy/blocking pieces stubbed out.
+    """Invoke ``nes serve`` with all heavy/blocking pieces stubbed out.
 
     Returns the CliRunner result. The server is never actually started
     (``uvicorn.run`` is a no-op) and no real engine is contacted.
     """
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.core.registry import MemoryRegistry
+    from nes.core.config import NESConfig
+    from nes.core.registry import MemoryRegistry
 
     _repopulate_registries()
 
-    config = JarvisConfig()
+    config = NESConfig()
     # Keep the scheduler block alive (it owns the executor wiring under test)
     # while pointing every store at the temp dir.
     config.agent_manager.enabled = True
@@ -148,15 +148,15 @@ def _run_serve(tmp_path, monkeypatch, *, build_spy, set_system_spy):
     sec.engine = engine
     sec.capability_policy = None
     sec.audit_logger = None
-    monkeypatch.setattr("openjarvis.security.setup_security", lambda *a, **k: sec)
+    monkeypatch.setattr("nes.security.setup_security", lambda *a, **k: sec)
 
     with (
         patch(
-            "openjarvis.system.builder.SystemBuilder.build",
+            "nes.system.builder.SystemBuilder.build",
             build_spy,
         ),
         patch(
-            "openjarvis.agents.executor.AgentExecutor.set_system",
+            "nes.agents.executor.AgentExecutor.set_system",
             set_system_spy,
         ),
         patch("uvicorn.run", lambda *a, **k: None),
@@ -168,7 +168,7 @@ def test_serve_does_not_call_systembuilder_build(tmp_path, monkeypatch):
     """The redundant second full build is gone (#263)."""
     build_spy = MagicMock(
         side_effect=AssertionError(
-            "SystemBuilder.build() must not run during `jarvis serve` startup "
+            "SystemBuilder.build() must not run during `nes serve` startup "
             "— it is the duplicate build #263 removed."
         )
     )

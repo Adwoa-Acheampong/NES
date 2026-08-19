@@ -1,0 +1,9 @@
+{
+  "_comment": "Claude Code MCP config for the UE 5.8 built-in MCP plugin. Copy the mcpServers block into your project's .mcp.json (or run the `claude mcp add` command in AUTOMATION.md). Replace <PORT> with the real port shown in UE: Editor > Edit > Plugins > MCP (or the Output Log line 'MCP server listening on ...'). The endpoint only exists while the Editor is open with the plugin enabled AND Toolset registries enabled.",
+  "mcpServers": {
+    "unreal-engine": {
+      "type": "url",
+      "url": "http://localhost:<PORT>/mcp"
+    }
+  }
+}

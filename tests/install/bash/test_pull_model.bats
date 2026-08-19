@@ -4,7 +4,7 @@
 setup() {
     # Use mktemp to ensure temp dir exists and is writable
     TEST_TMPDIR=$(mktemp -d)
-    export OPENJARVIS_HOME="$TEST_TMPDIR/.openjarvis"
+    export OPENJARVIS_HOME="$TEST_TMPDIR/.nes"
     mkdir -p "$OPENJARVIS_HOME/.state/models"
     export OLLAMA_STUB_LOG="$TEST_TMPDIR/ollama.log"
     : > "$OLLAMA_STUB_LOG"

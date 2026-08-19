@@ -1,0 +1,42 @@
+{
+  "_comment": "OpenClaw command descriptor for checking/starting SupaAgent local services.",
+  "name": "start_services",
+  "description": "Check and start local SupaAgent services such as ComfyUI, blkkstarhub on localhost:3002, OpenClaw, and optional Unreal MCP.",
+  "trigger_examples": [
+    "start supaagent",
+    "start comfyui",
+    "check the local agent stack",
+    "start blkkstarhub"
+  ],
+  "parameters": {
+    "only": {
+      "type": "string",
+      "required": false,
+      "description": "Optional service name: comfyui, blkkstarhub, openclaw, or unreal_mcp"
+    },
+    "status_only": {
+      "type": "boolean",
+      "required": false,
+      "description": "Check health only; do not start anything"
+    },
+    "dry_run": {
+      "type": "boolean",
+      "required": false,
+      "description": "Show what would launch without starting processes"
+    }
+  },
+  "command": {
+    "windows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%BLKK_SITE%\\pipeline\\supaagent\\start.ps1\" {only_flag} {status_flag} {dry_run_flag}",
+    "posix": "bash -lc 'cd \"$BLKK_SITE\" && python3 pipeline/supaagent/start.py {only_flag} {status_flag} {dry_run_flag}'"
+  },
+  "env": {
+    "BLKK_SITE": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/blkklegacy web platform"
+  },
+  "returns": "Relay the line beginning SUPAAGENT_STATUS_JSON= and the human-readable service summary back to the user.",
+  "notes": [
+    "only_flag => '-Only <service>' or '--only <service>' depending on shell adapter.",
+    "status_flag => '-StatusOnly' or '--status-only' when status_only is true.",
+    "dry_run_flag => '-DryRun' or '--dry-run' when dry_run is true.",
+    "This command starts local services only. It does not publish, post, message, spend money, or delete files."
+  ]
+}

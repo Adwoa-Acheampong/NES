@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from openjarvis.core.config import JarvisConfig, load_config
-from openjarvis.security.data_boundary_audit import (
+from nes.core.config import NESConfig, load_config
+from nes.security.data_boundary_audit import (
     API_KEY_ENV_VARS,
     BROWSER_TOOLS,
     CHANNEL_OUTBOUND_TOOLS,
@@ -100,10 +100,10 @@ def _ids(report):
 def _low_noise_config():
     """Baseline config with no warn/fail findings under an empty scan root.
 
-    JarvisConfig defaults include absolute store paths under the real
+    NESConfig defaults include absolute store paths under the real
     OPENJARVIS_HOME; clear those so tests only see artifacts under tmp_path.
     """
-    config = JarvisConfig()
+    config = NESConfig()
     config.analytics.enabled = False
     config.traces.enabled = False
     config.telemetry.enabled = False
@@ -132,7 +132,7 @@ def _low_noise_config():
     config.engine.default = "ollama"
     config.deep_research.engine = ""
     config.deep_research.model = ""
-    # Avoid scanning the developer's real ~/.openjarvis store files.
+    # Avoid scanning the developer's real ~/.nes store files.
     config.traces.db_path = ""
     config.telemetry.db_path = ""
     config.security.audit_log_path = ""
@@ -152,7 +152,7 @@ def _low_noise_config():
 
 def test_missing_config_does_not_report_dataclass_defaults(tmp_path, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    config = JarvisConfig()
+    config = NESConfig()
 
     report = build_data_boundary_report(config, tmp_path, config_loaded=False)
 
@@ -163,7 +163,7 @@ def test_missing_config_does_not_report_dataclass_defaults(tmp_path, monkeypatch
 
 
 def test_config_error_returns_fail_finding_without_crashing(tmp_path):
-    config = JarvisConfig()
+    config = NESConfig()
 
     report = build_data_boundary_report(
         config,
@@ -601,16 +601,16 @@ def test_config_root_error_returns_fail_without_local_store_scan(tmp_path):
         config,
         None,
         root_error=(
-            "ConfigurationError: bad OPENJARVIS_HOME at /Users/alice/private/openjarvis"
+            "ConfigurationError: bad OPENJARVIS_HOME at /Users/alice/private/nes"
         ),
     )
 
     findings = {finding.id: finding for finding in report.findings}
     assert findings["config-root-error"].status == "fail"
     assert "bad OPENJARVIS_HOME" not in findings["config-root-error"].evidence
-    assert "/Users/alice/private/openjarvis" not in str(report.to_dict())
+    assert "/Users/alice/private/nes" not in str(report.to_dict())
     assert "path details were redacted" in findings["config-root-error"].evidence
-    assert report.root == "<unresolved-openjarvis-home>"
+    assert report.root == "<unresolved-nes-home>"
 
 
 def test_group_or_other_readable_local_store_warns(tmp_path):
@@ -1103,7 +1103,7 @@ def test_knowledge_db_posix_permissions_checked(tmp_path):
 
 
 def test_browser_resolver_tools_are_all_classified():
-    from openjarvis.agents.tool_resolver import BROWSER_SUB_TOOLS
+    from nes.agents.tool_resolver import BROWSER_SUB_TOOLS
 
     assert set(BROWSER_SUB_TOOLS) <= BROWSER_TOOLS
 

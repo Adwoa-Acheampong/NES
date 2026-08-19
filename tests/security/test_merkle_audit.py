@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from openjarvis.security.audit import AuditLogger
-from openjarvis.security.types import (
+from nes.security.audit import AuditLogger
+from nes.security.types import (
     ScanFinding,
     SecurityEvent,
     SecurityEventType,

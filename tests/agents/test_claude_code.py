@@ -8,15 +8,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import openjarvis.agents  # noqa: F401 -- trigger registration
-from openjarvis.agents._stubs import AgentResult
-from openjarvis.agents.claude_code import (
+import nes.agents  # noqa: F401 -- trigger registration
+from nes.agents._stubs import AgentResult
+from nes.agents.claude_code import (
     _OUTPUT_END,
     _OUTPUT_START,
     ClaudeCodeAgent,
 )
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.registry import AgentRegistry
+from nes.core.events import EventBus, EventType
+from nes.core.registry import AgentRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -97,7 +97,7 @@ class TestEnsureRunner:
             patch("subprocess.run") as mock_run,
         ):
             mock_run.return_value = _mock_proc()
-            dest = home_dir / ".openjarvis" / "claude_code_runner"
+            dest = home_dir / ".nes" / "claude_code_runner"
             result = agent._ensure_runner()
             assert result == dest
             mock_run.assert_called_once()
@@ -110,7 +110,7 @@ class TestEnsureRunner:
         agent = ClaudeCodeAgent(engine, "test-model")
 
         home_dir = tmp_path / "home"
-        dest = home_dir / ".openjarvis" / "claude_code_runner"
+        dest = home_dir / ".nes" / "claude_code_runner"
         dest.mkdir(parents=True)
         (dest / "node_modules").mkdir()
 

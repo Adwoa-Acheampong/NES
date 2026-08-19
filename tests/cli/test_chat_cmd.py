@@ -1,4 +1,4 @@
-"""Tests for ``jarvis chat`` interactive REPL command."""
+"""Tests for ``nes chat`` interactive REPL command."""
 
 from __future__ import annotations
 
@@ -7,19 +7,19 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from openjarvis.agents._stubs import (
+from nes.agents._stubs import (
     AgentContext,
     AgentResult,
     BaseAgent,
     ToolUsingAgent,
 )
-from openjarvis.cli.chat_cmd import _read_input, chat
-from openjarvis.core.config import JarvisConfig
-from openjarvis.core.events import Event, EventBus, EventType
-from openjarvis.core.registry import AgentRegistry, ToolRegistry
-from openjarvis.core.types import Role, ToolCall, ToolResult
-from openjarvis.memory.store import LocalFactStore
-from openjarvis.tools._stubs import BaseTool, ToolSpec
+from nes.cli.chat_cmd import _read_input, chat
+from nes.core.config import NESConfig
+from nes.core.events import Event, EventBus, EventType
+from nes.core.registry import AgentRegistry, ToolRegistry
+from nes.core.types import Role, ToolCall, ToolResult
+from nes.memory.store import LocalFactStore
+from nes.tools._stubs import BaseTool, ToolSpec
 
 
 class _SimpleChatAgent(BaseAgent):
@@ -108,18 +108,18 @@ class TestChatAgents:
         engine = MagicMock()
         engine.engine_id = "mock"
         engine.generate.return_value = {"content": "Blue."}
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
         config.memory.enabled = True
         config.memory.facts_path = str(facts_path)
         config.agent.context_from_memory = True
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
-            patch("openjarvis.memory.build_memory_service", return_value=None),
-            patch("openjarvis.cli.ask._get_memory_backend", return_value=None),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
+            patch("nes.memory.build_memory_service", return_value=None),
+            patch("nes.cli.ask._get_memory_backend", return_value=None),
         ):
             result = CliRunner().invoke(
                 chat,
@@ -146,20 +146,20 @@ class TestChatAgents:
         engine = MagicMock()
         engine.engine_id = "mock"
         engine.generate.return_value = {"content": "Still working."}
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
         config.memory.enabled = True
         config.agent.context_from_memory = True
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
             patch(
-                "openjarvis.memory.build_memory_service",
+                "nes.memory.build_memory_service",
                 return_value=_FailingMemoryService(),
             ),
-            patch("openjarvis.cli.ask._get_memory_backend", return_value=None),
+            patch("nes.cli.ask._get_memory_backend", return_value=None),
         ):
             result = CliRunner().invoke(
                 chat,
@@ -175,15 +175,15 @@ class TestChatAgents:
         engine = MagicMock()
         engine.engine_id = "mock"
         engine.generate.return_value = {"content": "engine fallback"}
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
 
         AgentRegistry.register_value("simple_chat_agent", _SimpleChatAgent)
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
         ):
             result = CliRunner().invoke(
                 chat,
@@ -209,15 +209,15 @@ class TestChatAgents:
 
         engine = MagicMock()
         engine.engine_id = "mock"
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
 
         AgentRegistry.register_value("capturing_chat_agent", _CapturingAgent)
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
         ):
             result = CliRunner().invoke(
                 chat,
@@ -254,7 +254,7 @@ class TestChatAgents:
 
         engine = MagicMock()
         engine.engine_id = "mock"
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
         config.memory.enabled = True
         config.memory.facts_path = str(facts_path)
@@ -266,11 +266,11 @@ class TestChatAgents:
         )
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
-            patch("openjarvis.memory.build_memory_service", return_value=None),
-            patch("openjarvis.cli.ask._get_memory_backend", return_value=None),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
+            patch("nes.memory.build_memory_service", return_value=None),
+            patch("nes.cli.ask._get_memory_backend", return_value=None),
         ):
             result = CliRunner().invoke(
                 chat,
@@ -338,17 +338,17 @@ class TestChatAgents:
         engine = MagicMock()
         engine.engine_id = "mock"
         engine.generate.return_value = {"content": "engine fallback"}
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
 
         AgentRegistry.register_value("simple_chat_agent", _SimpleChatAgent)
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
             patch(
-                "openjarvis.memory.build_memory_service",
+                "nes.memory.build_memory_service",
                 side_effect=_build_memory_service,
             ),
         ):
@@ -367,7 +367,7 @@ class TestChatAgents:
     def test_tool_agent_uses_legacy_agent_tools_and_prompts_confirmation(self) -> None:
         engine = MagicMock()
         engine.engine_id = "mock"
-        config = JarvisConfig()
+        config = NESConfig()
         config.intelligence.default_model = "test-model"
         config.agent.tools = "dangerous_chat"
         config.agent.max_turns = 3
@@ -376,9 +376,9 @@ class TestChatAgents:
         ToolRegistry.register_value("dangerous_chat", _DangerousChatTool)
 
         with (
-            patch("openjarvis.cli.chat_cmd.load_config", return_value=config),
-            patch("openjarvis.engine.get_engine", return_value=("mock", engine)),
-            patch("openjarvis.intelligence.register_builtin_models"),
+            patch("nes.cli.chat_cmd.load_config", return_value=config),
+            patch("nes.engine.get_engine", return_value=("mock", engine)),
+            patch("nes.intelligence.register_builtin_models"),
         ):
             result = CliRunner().invoke(
                 chat,

@@ -1,43 +1,43 @@
 # systemd Service (Linux)
 
-OpenJarvis includes a systemd unit file for running the API server as a managed background service on Linux. This provides automatic startup on boot, crash recovery, and integration with standard Linux service management tools.
+NES includes a systemd unit file for running the API server as a managed background service on Linux. This provides automatic startup on boot, crash recovery, and integration with standard Linux service management tools.
 
 ## Prerequisites
 
 Before installing the service, ensure that:
 
-1. OpenJarvis is installed in a virtual environment at `/opt/openjarvis/.venv` (or adjust paths accordingly).
-2. A dedicated `openjarvis` system user exists (recommended for security).
+1. NES is installed in a virtual environment at `/opt/nes/.venv` (or adjust paths accordingly).
+2. A dedicated `nes` system user exists (recommended for security).
 3. An inference engine (such as Ollama) is running and accessible.
 
 Create the user and installation directory:
 
 ```bash
-sudo useradd --system --create-home --home-dir /opt/openjarvis openjarvis
-sudo -u openjarvis python3 -m venv /opt/openjarvis/.venv
-sudo -u openjarvis git clone https://github.com/open-jarvis/OpenJarvis.git /opt/openjarvis/OpenJarvis
-cd /opt/openjarvis/OpenJarvis && sudo -u openjarvis uv sync --extra server
+sudo useradd --system --create-home --home-dir /opt/nes nes
+sudo -u nes python3 -m venv /opt/nes/.venv
+sudo -u nes git clone https://github.com/open-nes/NES.git /opt/nes/NES
+cd /opt/nes/NES && sudo -u nes uv sync --extra server
 ```
 
 ## Installing the Service
 
 The unit binds `0.0.0.0`, so an **API key is required** — and the unit
-declares `EnvironmentFile=/etc/openjarvis/env` (no `-` prefix), so it will
+declares `EnvironmentFile=/etc/nes/env` (no `-` prefix), so it will
 **fail to start** until that file exists with a key. Create it first:
 
 ```bash
-sudo mkdir -p /etc/openjarvis
-echo "OPENJARVIS_API_KEY=$(jarvis auth generate-key)" | sudo tee /etc/openjarvis/env
-sudo chmod 600 /etc/openjarvis/env
+sudo mkdir -p /etc/nes
+echo "OPENJARVIS_API_KEY=$(nes auth generate-key)" | sudo tee /etc/nes/env
+sudo chmod 600 /etc/nes/env
 ```
 
 Then copy the unit file, reload the daemon, and enable the service:
 
 ```bash
-sudo cp deploy/systemd/openjarvis.service /etc/systemd/system/
+sudo cp deploy/systemd/nes.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable openjarvis
-sudo systemctl start openjarvis
+sudo systemctl enable nes
+sudo systemctl start nes
 ```
 
 Clients must send `Authorization: Bearer <key>` on `/v1/*` and `/api/*`
@@ -47,26 +47,26 @@ can drop the `EnvironmentFile` line.)
 Verify it is running:
 
 ```bash
-sudo systemctl status openjarvis
+sudo systemctl status nes
 ```
 
 ## Service File Reference
 
-The provided unit file at `deploy/systemd/openjarvis.service`:
+The provided unit file at `deploy/systemd/nes.service`:
 
 ```ini
 [Unit]
-Description=OpenJarvis API Server
+Description=NES API Server
 After=network.target
 
 [Service]
 Type=simple
-User=openjarvis
-WorkingDirectory=/opt/openjarvis
-ExecStart=/opt/openjarvis/.venv/bin/jarvis serve --host 0.0.0.0 --port 8000
+User=nes
+WorkingDirectory=/opt/nes
+ExecStart=/opt/nes/.venv/bin/nes serve --host 0.0.0.0 --port 8000
 Restart=on-failure
 RestartSec=5
-Environment=HOME=/opt/openjarvis
+Environment=HOME=/opt/nes
 
 [Install]
 WantedBy=multi-user.target
@@ -76,7 +76,7 @@ WantedBy=multi-user.target
 
 | Directive     | Value              | Description                                                                 |
 |---------------|--------------------|-----------------------------------------------------------------------------|
-| `Description` | `OpenJarvis API Server` | Human-readable name shown in `systemctl status` and logs.              |
+| `Description` | `NES API Server` | Human-readable name shown in `systemctl status` and logs.              |
 | `After`       | `network.target`   | Delays startup until the network stack is available, since the server binds to a network socket and may need to reach a remote engine. |
 
 ### `[Service]` Section
@@ -84,12 +84,12 @@ WantedBy=multi-user.target
 | Directive          | Value                                                              | Description                                                                                     |
 |--------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | `Type`             | `simple`                                                           | The process started by `ExecStart` is the main service process. systemd considers the service started immediately. |
-| `User`             | `openjarvis`                                                       | Runs the server as the `openjarvis` user rather than root, limiting the blast radius of any security issue. |
-| `WorkingDirectory` | `/opt/openjarvis`                                                  | Sets the working directory for the process. This is where OpenJarvis looks for local files and writes data. |
-| `ExecStart`        | `/opt/openjarvis/.venv/bin/jarvis serve --host 0.0.0.0 --port 8000` | The command to start the server. Uses the full path to the `jarvis` binary inside the virtual environment. |
+| `User`             | `nes`                                                       | Runs the server as the `nes` user rather than root, limiting the blast radius of any security issue. |
+| `WorkingDirectory` | `/opt/nes`                                                  | Sets the working directory for the process. This is where NES looks for local files and writes data. |
+| `ExecStart`        | `/opt/nes/.venv/bin/nes serve --host 0.0.0.0 --port 8000` | The command to start the server. Uses the full path to the `nes` binary inside the virtual environment. |
 | `Restart`          | `on-failure`                                                       | Automatically restarts the service if it exits with a non-zero exit code. Does not restart on clean shutdown (`systemctl stop`). |
 | `RestartSec`       | `5`                                                                | Waits 5 seconds before attempting a restart, preventing rapid restart loops if the service crashes immediately on startup. |
-| `Environment`      | `HOME=/opt/openjarvis`                                             | Sets the `HOME` environment variable so OpenJarvis finds its configuration at `~/.openjarvis/config.toml` (resolving to `/opt/openjarvis/.openjarvis/config.toml`). |
+| `Environment`      | `HOME=/opt/nes`                                             | Sets the `HOME` environment variable so NES finds its configuration at `~/.nes/config.toml` (resolving to `/opt/nes/.nes/config.toml`). |
 
 ### `[Install]` Section
 
@@ -104,7 +104,7 @@ WantedBy=multi-user.target
 Edit the `ExecStart` line to change the host or port:
 
 ```ini
-ExecStart=/opt/openjarvis/.venv/bin/jarvis serve --host 127.0.0.1 --port 9000
+ExecStart=/opt/nes/.venv/bin/nes serve --host 127.0.0.1 --port 9000
 ```
 
 !!! tip
@@ -112,10 +112,10 @@ ExecStart=/opt/openjarvis/.venv/bin/jarvis serve --host 127.0.0.1 --port 9000
 
 ### Setting the Engine and Model
 
-Pass additional flags to `jarvis serve`:
+Pass additional flags to `nes serve`:
 
 ```ini
-ExecStart=/opt/openjarvis/.venv/bin/jarvis serve --host 0.0.0.0 --port 8000 --engine ollama --model qwen3:8b
+ExecStart=/opt/nes/.venv/bin/nes serve --host 0.0.0.0 --port 8000 --engine ollama --model qwen3:8b
 ```
 
 ### Adding Environment Variables
@@ -124,7 +124,7 @@ Add multiple `Environment` directives or use `EnvironmentFile` for complex confi
 
 ```ini
 [Service]
-Environment=HOME=/opt/openjarvis
+Environment=HOME=/opt/nes
 Environment=OPENJARVIS_ENGINE_DEFAULT=vllm
 Environment=OPENJARVIS_OLLAMA_HOST=http://localhost:11434
 ```
@@ -133,7 +133,7 @@ Or load from a file:
 
 ```ini
 [Service]
-EnvironmentFile=/opt/openjarvis/.env
+EnvironmentFile=/opt/nes/.env
 ```
 
 ### Changing the User
@@ -143,9 +143,9 @@ If you prefer a different service user, update both the `User` directive and the
 ```ini
 [Service]
 User=myuser
-WorkingDirectory=/home/myuser/openjarvis
-ExecStart=/home/myuser/openjarvis/.venv/bin/jarvis serve --host 0.0.0.0 --port 8000
-Environment=HOME=/home/myuser/openjarvis
+WorkingDirectory=/home/myuser/nes
+ExecStart=/home/myuser/nes/.venv/bin/nes serve --host 0.0.0.0 --port 8000
+Environment=HOME=/home/myuser/nes
 ```
 
 ### Using a Configuration File
@@ -153,31 +153,31 @@ Environment=HOME=/home/myuser/openjarvis
 Ensure the configuration file exists at the path where `HOME` points:
 
 ```bash
-sudo -u openjarvis mkdir -p /opt/openjarvis/.openjarvis
-sudo -u openjarvis cp config.toml /opt/openjarvis/.openjarvis/config.toml
+sudo -u nes mkdir -p /opt/nes/.nes
+sudo -u nes cp config.toml /opt/nes/.nes/config.toml
 ```
 
-The server reads `~/.openjarvis/config.toml` on startup, where `~` resolves from the `HOME` environment variable.
+The server reads `~/.nes/config.toml` on startup, where `~` resolves from the `HOME` environment variable.
 
 ## Viewing Logs
 
-OpenJarvis logs are captured by journald. View them with `journalctl`:
+NES logs are captured by journald. View them with `journalctl`:
 
 ```bash
 # View all logs for the service
-sudo journalctl -u openjarvis
+sudo journalctl -u nes
 
 # Follow logs in real time
-sudo journalctl -u openjarvis -f
+sudo journalctl -u nes -f
 
 # View logs since the last boot
-sudo journalctl -u openjarvis -b
+sudo journalctl -u nes -b
 
 # View logs from the last hour
-sudo journalctl -u openjarvis --since "1 hour ago"
+sudo journalctl -u nes --since "1 hour ago"
 
 # View only error-level messages
-sudo journalctl -u openjarvis -p err
+sudo journalctl -u nes -p err
 ```
 
 ## Managing the Service
@@ -186,72 +186,72 @@ sudo journalctl -u openjarvis -p err
 
 ```bash
 # Start the service
-sudo systemctl start openjarvis
+sudo systemctl start nes
 
 # Stop the service
-sudo systemctl stop openjarvis
+sudo systemctl stop nes
 
 # Restart the service (stop + start)
-sudo systemctl restart openjarvis
+sudo systemctl restart nes
 
 # Reload configuration without full restart (sends SIGHUP)
-sudo systemctl reload-or-restart openjarvis
+sudo systemctl reload-or-restart nes
 ```
 
 ### Check Status
 
 ```bash
-sudo systemctl status openjarvis
+sudo systemctl status nes
 ```
 
 Example output:
 
 ```
-● openjarvis.service - OpenJarvis API Server
-     Loaded: loaded (/etc/systemd/system/openjarvis.service; enabled; preset: enabled)
+● nes.service - NES API Server
+     Loaded: loaded (/etc/systemd/system/nes.service; enabled; preset: enabled)
      Active: active (running) since Fri 2026-02-21 10:00:00 UTC; 2h ago
-   Main PID: 12345 (jarvis)
+   Main PID: 12345 (nes)
       Tasks: 4 (limit: 4915)
      Memory: 256.0M
         CPU: 1min 23s
-     CGroup: /system.slice/openjarvis.service
-             └─12345 /opt/openjarvis/.venv/bin/python /opt/openjarvis/.venv/bin/jarvis serve --host 0.0.0.0 --port 8000
+     CGroup: /system.slice/nes.service
+             └─12345 /opt/nes/.venv/bin/python /opt/nes/.venv/bin/nes serve --host 0.0.0.0 --port 8000
 ```
 
 ### Enable and Disable on Boot
 
 ```bash
 # Enable automatic start on boot
-sudo systemctl enable openjarvis
+sudo systemctl enable nes
 
 # Disable automatic start on boot
-sudo systemctl disable openjarvis
+sudo systemctl disable nes
 ```
 
 ### Apply Changes After Editing the Unit File
 
-After modifying `/etc/systemd/system/openjarvis.service`, reload the systemd daemon and restart the service:
+After modifying `/etc/systemd/system/nes.service`, reload the systemd daemon and restart the service:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart openjarvis
+sudo systemctl restart nes
 ```
 
 ## Running Alongside Ollama
 
-If Ollama is also managed via systemd, you can add an ordering dependency so the OpenJarvis service waits for Ollama to start:
+If Ollama is also managed via systemd, you can add an ordering dependency so the NES service waits for Ollama to start:
 
 ```ini
 [Unit]
-Description=OpenJarvis API Server
+Description=NES API Server
 After=network.target ollama.service
 Requires=ollama.service
 ```
 
 | Directive  | Description                                                              |
 |------------|--------------------------------------------------------------------------|
-| `After`    | Ensures OpenJarvis starts after Ollama.                                  |
-| `Requires` | If Ollama fails to start, OpenJarvis will not start either.              |
+| `After`    | Ensures NES starts after Ollama.                                  |
+| `Requires` | If Ollama fails to start, NES will not start either.              |
 
 !!! note
-    Use `Wants` instead of `Requires` if you want OpenJarvis to start even when Ollama is unavailable (for example, if you plan to start Ollama manually later).
+    Use `Wants` instead of `Requires` if you want NES to start even when Ollama is unavailable (for example, if you plan to start Ollama manually later).

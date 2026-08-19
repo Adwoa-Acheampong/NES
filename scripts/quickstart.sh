@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── OpenJarvis Quickstart ─────────────────────────────────────────────
+# ── NES Quickstart ─────────────────────────────────────────────
 # One-command setup: installs deps, starts Ollama + model, launches
 # the backend API server and frontend, then opens the browser.
 #
 # Usage:
-#   git clone https://github.com/open-jarvis/OpenJarvis.git
-#   cd OpenJarvis
+#   git clone https://github.com/open-nes/NES.git
+#   cd NES
 #   ./scripts/quickstart.sh
 # ──────────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ cd "$REPO_ROOT"
 
 echo -e "${BOLD}"
 echo "  ┌──────────────────────────────────┐"
-echo "  │       OpenJarvis Quickstart      │"
+echo "  │       NES Quickstart      │"
 echo "  └──────────────────────────────────┘"
 echo -e "${NC}"
 
@@ -154,8 +154,8 @@ ok "Python dependencies installed"
 
 # ── 7b. Build Rust extension ──────────────────────────────────────
 info "Building Rust extension..."
-uv run maturin develop -m rust/crates/openjarvis-python/Cargo.toml --quiet 2>/dev/null \
-  || uv run maturin develop -m rust/crates/openjarvis-python/Cargo.toml
+uv run maturin develop -m rust/crates/nes-python/Cargo.toml --quiet 2>/dev/null \
+  || uv run maturin develop -m rust/crates/nes-python/Cargo.toml
 ok "Rust extension built"
 
 # ── 8. Install frontend dependencies ────────────────────────────────
@@ -166,15 +166,15 @@ ok "Frontend dependencies installed"
 # ── 9. Start backend ────────────────────────────────────────────────
 info "Starting backend API server on port 8000..."
 if curl -sf http://localhost:8000/health &>/dev/null; then
-  fail "An OpenJarvis server is already running on port 8000. Stop it before re-running quickstart so updated environment variables are applied."
+  fail "An NES server is already running on port 8000. Stop it before re-running quickstart so updated environment variables are applied."
 fi
-uv run jarvis serve --port 8000 &>/dev/null &
+uv run nes serve --port 8000 &>/dev/null &
 BACKEND_PID=$!
 CLEANUP_PIDS+=("$BACKEND_PID")
 sleep 3
 
 if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
-  fail "Backend exited during startup. Run 'uv run jarvis serve --port 8000' to see the error."
+  fail "Backend exited during startup. Run 'uv run nes serve --port 8000' to see the error."
 elif curl -sf http://localhost:8000/health &>/dev/null; then
   ok "Backend running at http://localhost:8000"
 else
@@ -199,7 +199,7 @@ case "$(uname -s)" in
 esac
 
 echo ""
-echo -e "${GREEN}${BOLD}  OpenJarvis is running!${NC}"
+echo -e "${GREEN}${BOLD}  NES is running!${NC}"
 echo ""
 echo "  Chat UI:  http://localhost:5173"
 echo "  API:      http://localhost:8000"

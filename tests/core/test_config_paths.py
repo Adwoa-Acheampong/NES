@@ -1,8 +1,8 @@
-"""Tests for the env-aware OpenJarvis home-directory resolver (issue #462).
+"""Tests for the env-aware NES home-directory resolver (issue #462).
 
 Covers the single-root consolidation: ``$OPENJARVIS_HOME`` >
-``$XDG_DATA_HOME/openjarvis`` > ``~/.openjarvis``, backward compatibility
-(no env => exactly ``~/.openjarvis``), and the source-tree rejection guard.
+``$XDG_DATA_HOME/nes`` > ``~/.nes``, backward compatibility
+(no env => exactly ``~/.nes``), and the source-tree rejection guard.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from openjarvis.core import paths
+from nes.core import paths
 
 
 def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -32,11 +32,11 @@ class TestGetConfigDir:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Backward-compat: with nothing set, the resolved dir is exactly the
-        # historical ~/.openjarvis so existing installs are untouched.
+        # historical ~/.nes so existing installs are untouched.
         _clear_env(monkeypatch)
-        assert paths.get_config_dir() == (Path.home() / ".openjarvis").resolve()
+        assert paths.get_config_dir() == (Path.home() / ".nes").resolve()
 
-    def test_respects_openjarvis_home(
+    def test_respects_nes_home(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
@@ -49,10 +49,10 @@ class TestGetConfigDir:
     ) -> None:
         _clear_env(monkeypatch)
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-        # Single nested 'openjarvis' dir under XDG_DATA_HOME.
-        assert paths.get_config_dir() == (tmp_path / "openjarvis").resolve()
+        # Single nested 'nes' dir under XDG_DATA_HOME.
+        assert paths.get_config_dir() == (tmp_path / "nes").resolve()
 
-    def test_openjarvis_home_wins_over_xdg(
+    def test_nes_home_wins_over_xdg(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
@@ -61,7 +61,7 @@ class TestGetConfigDir:
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_loses"))
         assert paths.get_config_dir() == oj.resolve()
 
-    def test_expands_user_in_openjarvis_home(
+    def test_expands_user_in_nes_home(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
@@ -103,7 +103,7 @@ class TestDerivedDirs:
     ) -> None:
         _clear_env(monkeypatch)
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-        assert paths.get_cache_dir() == (tmp_path / "openjarvis" / "cache").resolve()
+        assert paths.get_cache_dir() == (tmp_path / "nes" / "cache").resolve()
 
 
 class TestSourceTreeRejection:
@@ -132,7 +132,7 @@ class TestLegacyConstantsHonorEnv:
     """
 
     def test_constant_matches_resolver_at_import(self) -> None:
-        from openjarvis.core import config
+        from nes.core import config
 
         # The constant is the import-time resolution of the same function.
         assert config.DEFAULT_CONFIG_DIR == paths.get_config_dir()
@@ -143,7 +143,7 @@ class TestLegacyConstantsHonorEnv:
     ) -> None:
         # Install/CLI tests monkeypatch this attribute directly; it must be a
         # real module attribute (not __getattr__-only) for setattr/undo to work.
-        from openjarvis.core import config
+        from nes.core import config
 
         monkeypatch.setattr(config, "DEFAULT_CONFIG_DIR", tmp_path / "patched")
         assert config.DEFAULT_CONFIG_DIR == tmp_path / "patched"
@@ -152,9 +152,9 @@ class TestLegacyConstantsHonorEnv:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Config dataclass field defaults must resolve under the override at
-        # instantiation time, not freeze ~/.openjarvis at import.
+        # instantiation time, not freeze ~/.nes at import.
         _clear_env(monkeypatch)
-        from openjarvis.core.config import SessionConfig, StorageConfig
+        from nes.core.config import SessionConfig, StorageConfig
 
         monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "oj"))
         root = (tmp_path / "oj").resolve()
@@ -167,7 +167,7 @@ class TestLegacyConstantsHonorEnv:
         # End-to-end: a non-config subsystem (credentials) resolves under the
         # custom root, proving the override is no longer split-brain.
         _clear_env(monkeypatch)
-        from openjarvis.core import credentials
+        from nes.core import credentials
 
         monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "oj"))
         assert (

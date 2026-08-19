@@ -1,0 +1,461 @@
+"""OrchestratorAgent — multi-turn agent with tool-calling loop.
+
+Supports two modes:
+
+- **function_calling** (default): Uses OpenAI-format tool definitions and
+  parses ``tool_calls`` from the engine response.
+- **structured**: Uses a THOUGHT/TOOL/INPUT/FINAL_ANSWER text format
+  (like ReAct) with a canonical system prompt from the orchestrator
+  prompt registry.  This is the format used by the SFT/GRPO training
+  pipelines, making the Orchestrator a distinctive trainable agent type.
+"""
+
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import re
+from typing import Any, List, Optional
+
+from nes.agents._stubs import AgentContext, AgentResult, ToolUsingAgent
+from nes.core.events import EventBus
+from nes.core.registry import AgentRegistry
+from nes.core.types import Message, Role, ToolCall, ToolResult
+from nes.engine._stubs import InferenceEngine
+from nes.tools._stubs import BaseTool
+
+
+@AgentRegistry.register("orchestrator")
+class OrchestratorAgent(ToolUsingAgent):
+    """Multi-turn agent that routes between tools and the LLM.
+
+    Implements a tool-calling loop:
+    1. Send messages with tool definitions to the engine.
+    2. If the response contains tool_calls, execute them and loop.
+    3. If no tool_calls, return the final answer.
+    4. Stop after ``max_turns`` iterations.
+
+    In **structured** mode the agent instead uses a
+    ``THOUGHT: / TOOL: / INPUT: / FINAL_ANSWER:`` text protocol
+    identical to the format used by the orchestrator SFT/GRPO
+    training pipelines.
+    """
+
+    agent_id = "orchestrator"
+    _default_temperature = 0.7
+    _default_max_tokens = 1024
+    _default_max_turns = 10
+
+    def __init__(
+        self,
+        engine: InferenceEngine,
+        model: str,
+        *,
+        tools: Optional[List[BaseTool]] = None,
+        bus: Optional[EventBus] = None,
+        max_turns: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        mode: str = "function_calling",
+        system_prompt: Optional[str] = None,
+        prompt_builder: Optional[Any] = None,
+        parallel_tools: bool = True,
+        interactive: bool = False,
+        confirm_callback=None,
+    ) -> None:
+        super().__init__(
+            engine,
+            model,
+            tools=tools,
+            bus=bus,
+            max_turns=max_turns,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            interactive=interactive,
+            confirm_callback=confirm_callback,
+            prompt_builder=prompt_builder,
+        )
+        self._mode = mode
+        self._system_prompt = system_prompt
+        self._parallel_tools = parallel_tools
+
+    def run(
+        self,
+        input: str,
+        context: Optional[AgentContext] = None,
+        **kwargs: Any,
+    ) -> AgentResult:
+        if self._mode == "structured":
+            return self._run_structured(input, context, **kwargs)
+        return self._run_function_calling(input, context, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Structured mode (THOUGHT/TOOL/INPUT/FINAL_ANSWER)
+    # ------------------------------------------------------------------
+
+    def _run_structured(
+        self,
+        input: str,
+        context: Optional[AgentContext] = None,
+        **kwargs: Any,
+    ) -> AgentResult:
+        self._emit_turn_start(input)
+
+        # Build system prompt
+        if self._system_prompt:
+            sys_prompt = self._system_prompt
+        else:
+            from nes.learning.intelligence.orchestrator.prompt_registry import (
+                build_system_prompt,
+            )
+
+            sys_prompt = build_system_prompt(tools=self._tools)
+
+        messages = self._build_messages(input, context, system_prompt=sys_prompt)
+
+        all_tool_results: list[ToolResult] = []
+        turns = 0
+
+        for _turn in range(self._max_turns):
+            turns += 1
+
+            if self._loop_guard:
+                messages = self._loop_guard.compress_context(messages)
+
+            result = self._generate(messages)
+            content = result.get("content", "")
+
+            parsed = self._parse_structured_response(content)
+
+            # FINAL_ANSWER -> done
+            if parsed["final_answer"]:
+                self._emit_turn_end(turns=turns)
+                return AgentResult(
+                    content=parsed["final_answer"],
+                    tool_results=all_tool_results,
+                    turns=turns,
+                )
+
+            # TOOL -> execute
+            if parsed["tool"]:
+                messages.append(Message(role=Role.ASSISTANT, content=content))
+
+                tool_call = ToolCall(
+                    id=f"orch_{turns}",
+                    name=parsed["tool"],
+                    arguments=self._normalize_structured_tool_input(
+                        parsed["tool"],
+                        parsed["input"],
+                    ),
+                )
+                tool_result = self._executor.execute(tool_call)
+                all_tool_results.append(tool_result)
+
+                if tool_result.success:
+                    observation = f"Observation: {tool_result.content}"
+                else:
+                    observation = (
+                        f"Observation: Tool '{tool_result.tool_name}' failed: "
+                        f"{tool_result.content}"
+                    )
+                messages.append(Message(role=Role.USER, content=observation))
+                continue
+
+            # Neither -> treat content as final answer
+            self._emit_turn_end(turns=turns)
+            return AgentResult(
+                content=content,
+                tool_results=all_tool_results,
+                turns=turns,
+            )
+
+        # Max turns exceeded
+        return self._max_turns_result(all_tool_results, turns)
+
+    def _normalize_structured_tool_input(
+        self,
+        tool_name: str,
+        raw_input: str,
+    ) -> str:
+        """Map unambiguous structured text input to a string parameter."""
+        if not raw_input:
+            return "{}"
+
+        try:
+            parsed_input = json.loads(raw_input)
+        except json.JSONDecodeError:
+            invalid_json = True
+            string_value = raw_input
+        else:
+            invalid_json = False
+            if isinstance(parsed_input, dict):
+                return raw_input
+            # INPUT is a text protocol. A non-object JSON value such as 42,
+            # true, null, or [1, 2] may still be the intended text for a tool's
+            # string parameter. Quoted JSON strings are decoded to remove only
+            # their surrounding quotes; other values retain their source text.
+            string_value = parsed_input if isinstance(parsed_input, str) else raw_input
+
+        tool_spec = None
+        for candidate in reversed(self._tools):
+            candidate_spec = candidate.spec
+            if candidate_spec.name == tool_name:
+                tool_spec = candidate_spec
+                break
+        if tool_spec is None:
+            return raw_input
+
+        parameters = tool_spec.parameters
+        parameter_container_type = parameters.get("type")
+        if parameter_container_type not in (None, "object"):
+            return raw_input
+
+        properties = parameters.get("properties", {})
+        required = parameters.get("required", [])
+        if not isinstance(properties, dict) or not isinstance(required, list):
+            return raw_input
+
+        if len(required) == 1 and required[0] in properties:
+            parameter_name = required[0]
+        elif not required and len(properties) == 1:
+            parameter_name = next(iter(properties))
+        else:
+            return raw_input
+
+        parameter_schema = properties[parameter_name]
+        if not isinstance(parameter_schema, dict):
+            return raw_input
+        parameter_type = parameter_schema.get("type")
+        accepts_string = parameter_type == "string" or (
+            isinstance(parameter_type, list) and "string" in parameter_type
+        )
+        if not accepts_string:
+            return raw_input
+
+        allow_object_text = (
+            tool_spec.metadata.get("structured_allow_object_text") is True
+        )
+        starts_like_object = raw_input.lstrip("\ufeff \t\r\n").startswith("{")
+        if invalid_json and starts_like_object and not allow_object_text:
+            return raw_input
+
+        return json.dumps({parameter_name: string_value})
+
+    @staticmethod
+    def _parse_structured_response(text: str) -> dict:
+        """Parse THOUGHT/TOOL/INPUT/FINAL_ANSWER from model output."""
+        result = {
+            "thought": "",
+            "tool": "",
+            "input": "",
+            "final_answer": "",
+        }
+
+        thought_match = re.search(
+            r"THOUGHT:\s*(.+?)(?=\nTOOL:|\nFINAL[_ ]?ANSWER:|\Z)",
+            text,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if thought_match:
+            result["thought"] = thought_match.group(1).strip()
+
+        final_match = re.search(
+            r"FINAL[_ ]?ANSWER:\s*(.+)",
+            text,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if final_match:
+            result["final_answer"] = final_match.group(1).strip()
+            return result
+
+        tool_match = re.search(r"TOOL:\s*(.+)", text, re.IGNORECASE)
+        if tool_match:
+            result["tool"] = tool_match.group(1).strip()
+
+        input_match = re.search(
+            r"INPUT:\s*(.+?)(?=\nTHOUGHT:|\nTOOL:|\nFINAL|\Z)",
+            text,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if input_match:
+            result["input"] = input_match.group(1).strip()
+
+        return result
+
+    # ------------------------------------------------------------------
+    # Function-calling mode (original behaviour)
+    # ------------------------------------------------------------------
+
+    def _run_function_calling(
+        self,
+        input: str,
+        context: Optional[AgentContext] = None,
+        **kwargs: Any,
+    ) -> AgentResult:
+        self._emit_turn_start(input)
+
+        # Build initial messages
+        messages = self._build_messages(
+            input,
+            context,
+            system_prompt=self._system_prompt,
+        )
+
+        # Get OpenAI-format tool definitions
+        openai_tools = self._executor.get_openai_tools() if self._tools else []
+
+        all_tool_results: list[ToolResult] = []
+        turns = 0
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+
+        for _turn in range(self._max_turns):
+            turns += 1
+
+            if self._loop_guard:
+                messages = self._loop_guard.compress_context(messages)
+
+            # Build generate kwargs
+            gen_kwargs: dict[str, Any] = {}
+            if openai_tools:
+                gen_kwargs["tools"] = openai_tools
+
+            result = self._generate(messages, **gen_kwargs)
+
+            # Accumulate token usage
+            usage = result.get("usage", {})
+            total_prompt_tokens += usage.get("prompt_tokens", 0)
+            total_completion_tokens += usage.get("completion_tokens", 0)
+
+            content = result.get("content", "")
+            raw_tool_calls = result.get("tool_calls", [])
+
+            # No tool calls -> check continuation, then final answer
+            if not raw_tool_calls:
+                content = self._check_continuation(result, messages)
+                content = self._strip_think_tags(content)
+                self._emit_turn_end(turns=turns, content_length=len(content))
+                return AgentResult(
+                    content=content,
+                    tool_results=all_tool_results,
+                    turns=turns,
+                    metadata={
+                        "prompt_tokens": total_prompt_tokens,
+                        "completion_tokens": total_completion_tokens,
+                        "total_tokens": total_prompt_tokens + total_completion_tokens,
+                    },
+                )
+
+            # Build ToolCall objects from raw dicts
+            tool_calls = [
+                ToolCall(
+                    id=tc.get("id", f"call_{i}"),
+                    name=tc.get("name", ""),
+                    arguments=tc.get("arguments", "{}"),
+                )
+                for i, tc in enumerate(raw_tool_calls)
+            ]
+
+            # Append assistant message with tool calls
+            messages.append(
+                Message(
+                    role=Role.ASSISTANT,
+                    content=content,
+                    tool_calls=tool_calls,
+                )
+            )
+
+            # Execute each tool (with loop guard check) and append results
+            if self._parallel_tools and len(tool_calls) > 1:
+                # Parallel execution
+                def _exec_tool(tc: ToolCall) -> tuple:
+                    if self._loop_guard:
+                        verdict = self._loop_guard.check_call(
+                            tc.name,
+                            tc.arguments,
+                        )
+                        if verdict.blocked:
+                            return tc, ToolResult(
+                                tool_name=tc.name,
+                                content=f"Loop guard: {verdict.reason}",
+                                success=False,
+                            )
+                    return tc, self._executor.execute(tc)
+
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=len(tool_calls),
+                ) as pool:
+                    futures = {pool.submit(_exec_tool, tc): tc for tc in tool_calls}
+                    results_map: dict[int, tuple] = {}
+                    for future in concurrent.futures.as_completed(futures):
+                        tc_orig = futures[future]
+                        results_map[id(tc_orig)] = future.result()
+
+                # Append results in original order
+                for tc in tool_calls:
+                    _, tool_result = results_map[id(tc)]
+                    all_tool_results.append(tool_result)
+                    messages.append(
+                        Message(
+                            role=Role.TOOL,
+                            content=tool_result.content,
+                            tool_call_id=tc.id,
+                            name=tc.name,
+                        )
+                    )
+            else:
+                # Sequential execution
+                for tc in tool_calls:
+                    # Loop guard check before execution
+                    if self._loop_guard:
+                        verdict = self._loop_guard.check_call(
+                            tc.name,
+                            tc.arguments,
+                        )
+                        if verdict.blocked:
+                            tool_result = ToolResult(
+                                tool_name=tc.name,
+                                content=f"Loop guard: {verdict.reason}",
+                                success=False,
+                            )
+                            all_tool_results.append(tool_result)
+                            messages.append(
+                                Message(
+                                    role=Role.TOOL,
+                                    content=tool_result.content,
+                                    tool_call_id=tc.id,
+                                    name=tc.name,
+                                )
+                            )
+                            continue
+
+                    tool_result = self._executor.execute(tc)
+                    all_tool_results.append(tool_result)
+
+                    # Append tool response message
+                    messages.append(
+                        Message(
+                            role=Role.TOOL,
+                            content=tool_result.content,
+                            tool_call_id=tc.id,
+                            name=tc.name,
+                        )
+                    )
+
+        # Max turns exceeded
+        final_content = self._strip_think_tags(content) if content else ""
+        self._emit_turn_end(turns=turns, max_turns_exceeded=True)
+        return AgentResult(
+            content=final_content or "Maximum turns reached without a final answer.",
+            tool_results=all_tool_results,
+            turns=turns,
+            metadata={
+                "max_turns_exceeded": True,
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_prompt_tokens + total_completion_tokens,
+            },
+        )
+
+
+__all__ = ["OrchestratorAgent"]

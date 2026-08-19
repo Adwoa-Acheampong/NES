@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from openjarvis.core.types import ToolResult
-from openjarvis.learning.intelligence.orchestrator.environment import (
+from nes.core.types import ToolResult
+from nes.learning.intelligence.orchestrator.environment import (
     OrchestratorEnvironment,
 )
-from openjarvis.learning.intelligence.orchestrator.types import OrchestratorAction
-from openjarvis.tools._stubs import BaseTool, ToolSpec
+from nes.learning.intelligence.orchestrator.types import OrchestratorAction
+from nes.tools._stubs import BaseTool, ToolSpec
 
 # -- Mock tool ---------------------------------------------------------------
 

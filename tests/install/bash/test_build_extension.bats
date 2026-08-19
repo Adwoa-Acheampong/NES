@@ -2,10 +2,10 @@
 
 setup() {
     TEST_TMPDIR=$(mktemp -d)
-    export OPENJARVIS_HOME="$TEST_TMPDIR/.openjarvis"
+    export OPENJARVIS_HOME="$TEST_TMPDIR/.nes"
     mkdir -p "$OPENJARVIS_HOME/.state"
-    mkdir -p "$OPENJARVIS_HOME/src/rust/crates/openjarvis-python"
-    touch "$OPENJARVIS_HOME/src/rust/crates/openjarvis-python/Cargo.toml"
+    mkdir -p "$OPENJARVIS_HOME/src/rust/crates/nes-python"
+    touch "$OPENJARVIS_HOME/src/rust/crates/nes-python/Cargo.toml"
     export UV_STUB_LOG="$TEST_TMPDIR/uv.log"
     : > "$UV_STUB_LOG"
     export PATH="$BATS_TEST_DIRNAME/stubs:$PATH"
@@ -39,7 +39,7 @@ teardown() {
 @test "calls uv run maturin develop with the right manifest" {
     UV_STUB_EXIT=0 run bash "$SCRIPT"
     grep -q "run maturin develop -m" "$UV_STUB_LOG"
-    grep -q "rust/crates/openjarvis-python/Cargo.toml" "$UV_STUB_LOG"
+    grep -q "rust/crates/nes-python/Cargo.toml" "$UV_STUB_LOG"
 }
 
 @test "atomic rename — no .tmp file left behind" {

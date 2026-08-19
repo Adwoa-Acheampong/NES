@@ -11,10 +11,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openjarvis.channels._stubs import ChannelStatus
-from openjarvis.channels.sendblue import SendBlueChannel
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.registry import ChannelRegistry
+from nes.channels._stubs import ChannelStatus
+from nes.channels.sendblue import SendBlueChannel
+from nes.core.events import EventBus, EventType
+from nes.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 
@@ -175,7 +175,7 @@ class TestWebhookHandler:
             {
                 "from_number": "+19127130720",
                 "to_number": "+15551234567",
-                "content": "Hello Jarvis",
+                "content": "Hello NES",
                 "message_handle": "msg-001",
                 "is_outbound": False,
                 "status": "RECEIVED",
@@ -185,7 +185,7 @@ class TestWebhookHandler:
 
         assert len(received) == 1
         assert received[0].sender == "+19127130720"
-        assert received[0].content == "Hello Jarvis"
+        assert received[0].content == "Hello NES"
         assert received[0].channel == "sendblue"
 
     def test_outbound_messages_ignored(self):

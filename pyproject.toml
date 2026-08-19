@@ -3,9 +3,9 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "OpenJarvis"
+name = "NES"
 dynamic = ["version"]
-description = "OpenJarvis — modular AI assistant backend with composable intelligence primitives"
+description = "NES — modular AI assistant backend with composable intelligence primitives"
 readme = "README.md"
 # Upper bound: numpy 2.2.x (pinned transitively via datasets/pandas) ships no
 # cp314 Windows wheel, so under Python 3.14 uv would compile numpy from source
@@ -14,7 +14,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "Open Jarvis Contributors"},
+    {name = "Open NES Contributors"},
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -35,11 +35,14 @@ dependencies = [
     "openai>=1.30",
     "nvidia-ml-py>=12.560.30",
     "posthog>=3.0",
+    "prompt-toolkit>=3.0",
+    "pygments>=2.15",
     "python-telegram-bot>=22.6",
     "rich>=13",
     "tomli>=2.0; python_version < '3.11'",
     "tomlkit>=0.12",
     "websockets>=15.0.1",
+    "python-dotenv>=1.2.1",
 ]
 
 [project.optional-dependencies]
@@ -136,7 +139,7 @@ eval-sheets = ["gspread>=6.0", "google-auth>=2.0"]
 mining-pearl-cpu = [
     # Pearl Python packages (py-pearl-mining, miner-base, pearl-gateway) are
     # not on PyPI yet. They are installed at first `mine init` via the
-    # build-from-pin path in src/openjarvis/mining/_install.py:build_from_pin().
+    # build-from-pin path in src/nes/mining/_install.py:build_from_pin().
     # When Pearl publishes wheels, replace the line below with version pins.
     #
     # The extra remains as a feature-flag namespace so users can run
@@ -153,14 +156,14 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/open-jarvis/OpenJarvis"
-Documentation = "https://open-jarvis.github.io/OpenJarvis/"
-Repository = "https://github.com/open-jarvis/OpenJarvis"
-Issues = "https://github.com/open-jarvis/OpenJarvis/issues"
+Homepage = "https://github.com/open-nes/NES"
+Documentation = "https://open-nes.github.io/NES/"
+Repository = "https://github.com/open-nes/NES"
+Issues = "https://github.com/open-nes/NES/issues"
 
 [project.scripts]
-jarvis = "openjarvis.cli:main"
-openjarvis-eval = "openjarvis.evals.cli:main"
+nes = "nes.cli:main"
+nes-eval = "nes.evals.cli:main"
 
 # Version is derived from git tags by hatch-vcs (see #526). For source/editable
 # checkouts this yields the true `git describe` version (e.g. 1.0.3.dev109+g<sha>)
@@ -182,19 +185,19 @@ git_describe_command = [
 ]
 # Builds without a git checkout (e.g. the `COPY src/ src/` Docker stages, which
 # never include .git) can't run `git describe`. Without a fallback that would
-# hard-fail the build. Mirror the runtime sentinel in src/openjarvis/__init__.py.
+# hard-fail the build. Mirror the runtime sentinel in src/nes/__init__.py.
 # Such builds can inject the real version via SETUPTOOLS_SCM_PRETEND_VERSION.
 fallback_version = "0.0.0+unknown"
 
 [tool.uv.sources]
-openjarvis-rust = { path = "rust/crates/openjarvis-python" }
+nes-rust = { path = "rust/crates/nes-python" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/openjarvis"]
+packages = ["src/nes"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"src/openjarvis/agents/claude_code_runner" = "_node_modules/claude_code_runner"
-"src/openjarvis/channels/whatsapp_baileys_bridge" = "_node_modules/whatsapp_baileys_bridge"
+"src/nes/agents/claude_code_runner" = "_node_modules/claude_code_runner"
+"src/nes/channels/whatsapp_baileys_bridge" = "_node_modules/whatsapp_baileys_bridge"
 "scripts/install" = "_install_scripts"
 "deploy/windows" = "_deploy/windows"
 
@@ -223,27 +226,28 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/openjarvis/evals/datasets/*.py" = ["E501"]
-"src/openjarvis/evals/scorers/*.py" = ["E501"]
+"src/nes/evals/datasets/*.py" = ["E501"]
+"src/nes/evals/scorers/*.py" = ["E501"]
 # hybrid/ is research code with long prompt strings and paradigm-specific
 # config dicts — same relaxation as evals research code above. The ``**`` glob
 # also covers subpackages (e.g. hybrid/skillorchestra/), which the prior
 # ``hybrid/*.py`` glob missed.
-"src/openjarvis/agents/hybrid/**/*.py" = ["E501"]
+"src/nes/agents/hybrid/**/*.py" = ["E501"]
 # research_loop.py carries long prompt strings too (documented in CLAUDE.md);
 # the ignore was missing here.
-"src/openjarvis/agents/research_loop.py" = ["E501"]
+"src/nes/agents/research_loop.py" = ["E501"]
 
 [dependency-groups]
 dev = [
     "maturin>=1.12.6",
+    "pytest>=9.0.2",
 ]
-# openjarvis_rust is the native PyO3 extension, built from the local Rust
+# nes_rust is the native PyO3 extension, built from the local Rust
 # workspace. It lives in a uv dependency group (PEP 735) — not the published
 # `desktop` extra — so `uv sync --group desktop-native` builds it from source
-# for the desktop app, while `pip install openjarvis[desktop]` from PyPI does
-# NOT try to resolve openjarvis-rust from PyPI, where it isn't published
+# for the desktop app, while `pip install nes[desktop]` from PyPI does
+# NOT try to resolve nes-rust from PyPI, where it isn't published
 # (dependency groups are excluded from wheel metadata). See #584 / #615.
 desktop-native = [
-    "openjarvis-rust",
+    "nes-rust",
 ]

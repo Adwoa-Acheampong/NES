@@ -3,7 +3,7 @@
 version: "3.9"
 
 services:
-  jarvis:
+  nes:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.gpu.rocm

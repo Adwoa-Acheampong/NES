@@ -1,0 +1,96 @@
+// OpenClaw gateway config for the Black Star Legacy agent.
+// Copy to openclaw.config.jsonc (or merge into your existing OpenClaw config)
+// and adapt to your installed OpenClaw version — config keys vary by release, so
+// treat this as the INTENT (engines + channels + command + allow-list). Check
+// `openclaw --help` / the OpenClaw docs for the exact schema on your version.
+{
+  // Reasoning model OpenClaw uses to plan/route. Uses your Anthropic subscription.
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-opus-4-8"
+  },
+
+  // ---- Engines: the coding-agent CLIs OpenClaw can dispatch to -------------
+  // Both connect to the SAME Unreal MCP endpoint (set <PORT> from the UE Output Log).
+  "engines": {
+    "nes": {
+      "command": "nes",
+      "role": "builder",            // scene building, art direction
+      "default": true,
+      "mcpServers": {
+        "unreal-engine": { "type": "url", "url": "http://localhost:<PORT>/mcp" }
+      }
+    },
+    "codex": {
+      "command": "codex",
+      "role": "scripter",           // python/blueprint/batch/debug
+      "mcpServers": {
+        "unreal-engine": { "type": "url", "url": "http://localhost:<PORT>/mcp" }
+      }
+    }
+  },
+
+  // ---- Routing: map intent -> engine (mirrors agent/AGENTS.md) -------------
+  "routing": {
+    "rules": [
+      { "match": ["hero image", "thumbnail", "concept frame", "background image", "generate image"], "command": "generate_image" },
+      { "match": ["animate", "short loop", "hero loop", "image to video", "generate video"], "command": "generate_video" },
+      { "match": ["start supaagent", "start comfyui", "start blkkstarhub", "check stack", "agent status"], "command": "start_services" },
+      { "match": ["publish to instagram", "post to tiktok", "share to snapchat", "social upload"], "engine": "nes" },
+      { "match": ["build", "design", "create", "tour", "lighting", "art direct", "render a"], "engine": "nes" },
+      { "match": ["fix", "script", "batch", "automate", "debug", "blueprint", "error"], "engine": "codex" }
+    ],
+    "default": "nes"
+  },
+
+  // ---- Messaging channels: who can reach the agent ------------------------
+  // Fill tokens via environment variables, NOT inline. Allow-list YOUR chat ids.
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "botTokenEnv": "OPENCLAW_TELEGRAM_TOKEN",
+      "allowedChatIds": ["<your-telegram-id>"]
+    },
+    "whatsapp": {
+      "enabled": false,
+      "allowedNumbers": ["<your-number>"]
+    }
+  },
+
+  // ---- Commands the agent can run ----------------------------------------
+  // See openclaw/blkk-render.command.json for the full spec.
+  "commands": {
+    "blkk_render": {
+      "spec": "./blkk-render.command.json",
+      "detached": true,             // UE renders take minutes; don't block chat
+      "reportMarker": "PIPELINE_SUMMARY_JSON="
+    },
+    "generate_image": {
+      "spec": "./gen-image.command.json",
+      "detached": true,
+      "reportMarker": "IMAGE_RESULT_JSON="
+    },
+    "generate_video": {
+      "spec": "./gen-video.command.json",
+      "detached": true,
+      "reportMarker": "VIDEO_RESULT_JSON="
+    },
+    "start_services": {
+      "spec": "./start-services.command.json",
+      "detached": false,
+      "reportMarker": "SUPAAGENT_STATUS_JSON="
+    }
+  },
+
+  // ---- Environment passed to engines + commands --------------------------
+  "env": {
+    "BLKK_SITE": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/blkklegacy web platform"
+  },
+
+  // ---- Context auto-loaded for every build request -----------------------
+  // Ensures whichever engine builds the scene follows the render contract.
+  "systemContextFiles": [
+    "./../agent/AGENTS.md",
+    "./../agent/scene-recipe.md"
+  ]
+}

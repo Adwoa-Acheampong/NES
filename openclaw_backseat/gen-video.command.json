@@ -1,0 +1,60 @@
+{
+  "_comment": "OpenClaw command descriptor for Tier 2 local video generation through ComfyUI/Wan.",
+  "name": "generate_video",
+  "description": "Generate a short motion clip, hero loop, product loop, or image-to-video animation through the local ComfyUI video workflow.",
+  "trigger_examples": [
+    "animate this still into a five second hero loop",
+    "make a slow cinematic push-in from the estate hero image",
+    "generate a short product motion clip for the fragrance"
+  ],
+  "parameters": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": "Output base name, e.g. estate-loop or crushed-motion"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "Motion prompt to pass to ComfyUI/Wan"
+    },
+    "image": {
+      "type": "string",
+      "required": false,
+      "description": "Optional still image path for image-to-video mode"
+    },
+    "workflow": {
+      "type": "string",
+      "required": false,
+      "description": "Optional workflow filename in pipeline/media/workflows"
+    },
+    "frames": {
+      "type": "integer",
+      "required": false
+    },
+    "fps": {
+      "type": "integer",
+      "required": false
+    },
+    "seed": {
+      "type": "integer",
+      "required": false
+    }
+  },
+  "command": {
+    "windows": "cmd /c \"cd /d \"%BLKK_SITE%\" && python pipeline\\media\\gen_video.py --name \"{name}\" --prompt \"{prompt}\" {image_flag} {workflow_flag} {frames_flag} {fps_flag} {seed_flag}\"",
+    "posix": "bash -lc 'cd \"$BLKK_SITE\" && python3 pipeline/media/gen_video.py --name \"{name}\" --prompt \"{prompt}\" {image_flag} {workflow_flag} {frames_flag} {fps_flag} {seed_flag}'"
+  },
+  "env": {
+    "BLKK_SITE": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/blkklegacy web platform"
+  },
+  "returns": "Relay the line beginning VIDEO_RESULT_JSON= back to the user.",
+  "notes": [
+    "image_flag => '--image \"<path>\"' or empty.",
+    "workflow_flag => '--workflow \"<workflow>\"' or empty.",
+    "frames_flag => '--frames <value>' or empty.",
+    "fps_flag => '--fps <value>' or empty.",
+    "seed_flag => '--seed <value>' or empty.",
+    "Posting or publishing generated video is a separate approval-gated step unless the user explicitly requested local-only generation."
+  ]
+}

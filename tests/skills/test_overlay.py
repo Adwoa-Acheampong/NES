@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from openjarvis.skills.overlay import (
+from nes.skills.overlay import (
     SkillOverlay,
     SkillOverlayLoader,
     write_overlay,

@@ -1,0 +1,70 @@
+{
+  "_comment": "Copy this to config.json and edit local paths. config.json is ignored by git.",
+  "startup_order": [
+    "nes",
+    "comfyui",
+    "blkkstarhub",
+    "openclaw",
+    "unreal_mcp"
+  ],
+  "defaults": {
+    "startup_timeout_sec": 30,
+    "request_timeout_sec": 3,
+    "visible": false
+  },
+  "services": {
+    "nes": {
+      "enabled": true,
+      "required": true,
+      "description": "NES Routing and Intelligence Engine.",
+      "health_url": "",
+      "working_dir": "{ROOT}/NES",
+      "command": "nes serve",
+      "startup_timeout_sec": 15,
+      "visible": true,
+      "setup_note": "Central intelligence"
+    },
+    "comfyui": {
+      "enabled": true,
+      "required": false,
+      "description": "Local ComfyUI server for image/video generation.",
+      "health_url": "http://127.0.0.1:8188",
+      "working_dir": "%COMFYUI_DIR%",
+      "command": "run_nvidia_gpu.bat",
+      "startup_timeout_sec": 120,
+      "visible": false,
+      "setup_note": "Set COMFYUI_DIR to your ComfyUI folder, or replace working_dir with a real path such as C:/AI/ComfyUI."
+    },
+    "blkkstarhub": {
+      "enabled": true,
+      "required": false,
+      "description": "Status check for the app currently expected on localhost:3002.",
+      "health_url": "http://localhost:3002/",
+      "working_dir": "{MONOREPO}",
+      "command": "pnpm --filter @blkk/web-hub dev",
+      "startup_timeout_sec": 45,
+      "setup_note": "Starts apps/web-hub on port 3002 from the monorepo root."
+    },
+    "openclaw": {
+      "enabled": true,
+      "required": false,
+      "description": "Messenger/router hub for SupaAgent commands.",
+      "health_url": "",
+      "working_dir": "{ROOT}",
+      "command": "openclaw gateway:watch",
+      "startup_timeout_sec": 5,
+      "visible": false,
+      "setup_note": "OpenClaw has no default HTTP health URL here, so startup is reported by process launch."
+    },
+    "unreal_mcp": {
+      "enabled": false,
+      "required": false,
+      "description": "Optional Unreal Engine 5.8 MCP endpoint. Open the UE editor manually unless you add a command.",
+      "health_url": "http://127.0.0.1:8000/mcp",
+      "working_dir": "{ROOT}",
+      "command": "",
+      "startup_timeout_sec": 10,
+      "setup_note": "Enable when using UE 5.8 tours. Empty command means check only."
+    }
+  }
+}

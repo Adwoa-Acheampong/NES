@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildWsUrl } from './useAgentEvents';
 
-const SETTINGS_KEY = 'openjarvis-settings';
+const SETTINGS_KEY = 'nes-settings';
 
 class MemoryStorage {
   private store = new Map<string, string>();
@@ -31,14 +31,14 @@ describe('buildWsUrl', () => {
     localStorage.setItem(
       SETTINGS_KEY,
       JSON.stringify({
-        apiUrl: 'https://jarvis.example.com:8443',
+        apiUrl: 'https://nes.example.com:8443',
         apiKey: 'secret+/=',
       }),
     );
 
     const url = new URL(buildWsUrl('agent/one'));
 
-    expect(url.origin).toBe('wss://jarvis.example.com:8443');
+    expect(url.origin).toBe('wss://nes.example.com:8443');
     expect(url.pathname).toBe('/v1/agents/events');
     expect(url.searchParams.get('agent_id')).toBe('agent/one');
     expect(url.searchParams.get('token')).toBe('secret+/=');

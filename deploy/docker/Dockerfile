@@ -49,18 +49,18 @@ COPY scripts/install scripts/install
 COPY deploy/windows deploy/windows
 
 # Copy built frontend into the server static directory
-COPY --from=frontend /src/openjarvis/server/static src/openjarvis/server/static/
+COPY --from=frontend /src/nes/server/static src/nes/server/static/
 
 # Install the project itself without re-resolving dependencies.
 RUN uv pip install --system --no-deps . && \
     maturin build --release \
-        --manifest-path rust/crates/openjarvis-python/Cargo.toml \
+        --manifest-path rust/crates/nes-python/Cargo.toml \
         --interpreter python3 \
-        --out /tmp/openjarvis-rust-wheel && \
-    uv pip install --system --no-deps /tmp/openjarvis-rust-wheel/*.whl && \
-    python3 -c "import openjarvis_rust; print('openjarvis_rust ok')" && \
+        --out /tmp/nes-rust-wheel && \
+    uv pip install --system --no-deps /tmp/nes-rust-wheel/*.whl && \
+    python3 -c "import nes_rust; print('nes_rust ok')" && \
     python3 -m pip uninstall -y maturin && \
-    rm -rf /tmp/openjarvis-rust-wheel rust
+    rm -rf /tmp/nes-rust-wheel rust
 
 # Stage 3: Runtime
 FROM python:3.12.13-slim-bookworm@sha256:76d4b7b6305788c6b4c6a19d6a22a3921bf802e9af4d5e1e5bd771208dba74bf
@@ -72,13 +72,13 @@ WORKDIR /app
 # Run as an unprivileged user — the server needs no root privileges, so dropping
 # them limits the blast radius of a compromise (#565). The app writes only to
 # $HOME (config/cache/state), which is owned by this user.
-RUN groupadd --system --gid 10001 openjarvis && \
-    useradd --system --uid 10001 --gid openjarvis \
-        --create-home --home-dir /home/openjarvis openjarvis
-ENV HOME=/home/openjarvis
-USER openjarvis
+RUN groupadd --system --gid 10001 nes && \
+    useradd --system --uid 10001 --gid nes \
+        --create-home --home-dir /home/nes nes
+ENV HOME=/home/nes
+USER nes
 
 EXPOSE 8000
 
-ENTRYPOINT ["jarvis"]
+ENTRYPOINT ["nes"]
 CMD ["serve", "--host", "0.0.0.0", "--port", "8000"]

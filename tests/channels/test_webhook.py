@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openjarvis.channels._stubs import ChannelStatus
-from openjarvis.channels.webhook import WebhookChannel
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.registry import ChannelRegistry
+from nes.channels._stubs import ChannelStatus
+from nes.channels.webhook import WebhookChannel
+from nes.core.events import EventBus, EventType
+from nes.core.registry import ChannelRegistry
 
 
 @pytest.fixture(autouse=True)

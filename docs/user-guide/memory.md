@@ -54,11 +54,11 @@ Each retrieval returns a list of `RetrievalResult` objects:
 The default backend using SQLite's built-in FTS5 full-text search extension. Zero external dependencies -- uses Python's standard `sqlite3` module.
 
 - **Scoring:** BM25 ranking via FTS5 MATCH queries
-- **Persistence:** SQLite database file (default: `~/.openjarvis/memory.db`)
+- **Persistence:** SQLite database file (default: `~/.nes/memory.db`)
 - **Dependencies:** None (built into Python)
 
 ```python
-from openjarvis.core.registry import MemoryRegistry
+from nes.core.registry import MemoryRegistry
 
 backend = MemoryRegistry.create("sqlite", db_path="./memory.db")
 doc_id = backend.store("Hello world", source="test.txt")
@@ -156,8 +156,8 @@ Combines a sparse retriever and a dense retriever using Reciprocal Rank Fusion (
 - **Dependencies:** Depends on sub-backends
 
 ```python
-from openjarvis.tools.storage.bm25 import BM25Memory
-from openjarvis.tools.storage.faiss_backend import FAISSMemory
+from nes.tools.storage.bm25 import BM25Memory
+from nes.tools.storage.faiss_backend import FAISSMemory
 
 sparse = BM25Memory()
 dense = FAISSMemory()
@@ -173,7 +173,7 @@ backend = MemoryRegistry.create(
 ```
 
 !!! note "Backward compatibility"
-    The old `from openjarvis.memory.bm25 import BM25Memory` still works via backward-compatibility shims, but new code should use the canonical `openjarvis.tools.storage.*` imports.
+    The old `from nes.memory.bm25 import BM25Memory` still works via backward-compatibility shims, but new code should use the canonical `nes.tools.storage.*` imports.
 
 | Parameter       | Default | Description                              |
 |-----------------|---------|------------------------------------------|
@@ -262,8 +262,8 @@ The ingestion pipeline automatically skips:
 
 ```python
 from pathlib import Path
-from openjarvis.tools.storage.chunking import ChunkConfig
-from openjarvis.tools.storage.ingest import ingest_path
+from nes.tools.storage.chunking import ChunkConfig
+from nes.tools.storage.ingest import ingest_path
 
 # Default chunking
 chunks = ingest_path(Path("./docs/"))
@@ -303,7 +303,7 @@ When memory context injection is enabled (the default), queries are automaticall
 The following context was retrieved from the knowledge base.
 Use it to inform your response, citing sources where applicable:
 
-[Source: docs/intro.md] OpenJarvis is a modular AI framework...
+[Source: docs/intro.md] NES is a modular AI framework...
 
 [Source: docs/config.md] Configuration is stored in TOML format...
 ```
@@ -313,7 +313,7 @@ Use it to inform your response, citing sources where applicable:
 === "CLI"
 
     ```bash
-    jarvis ask --no-context "Tell me about Python"
+    nes ask --no-context "Tell me about Python"
     ```
 
 === "Python SDK"
@@ -328,27 +328,27 @@ Use it to inform your response, citing sources where applicable:
 
 ```bash
 # Index a directory
-jarvis memory index ./docs/
+nes memory index ./docs/
 
 # Index with custom chunking
-jarvis memory index ./notes/ --chunk-size 256 --chunk-overlap 32
+nes memory index ./notes/ --chunk-size 256 --chunk-overlap 32
 
 # Search the memory store
-jarvis memory search "machine learning"
+nes memory search "machine learning"
 
 # Search with more results
-jarvis memory search -k 10 "neural networks"
+nes memory search -k 10 "neural networks"
 
 # Show memory statistics
-jarvis memory stats
+nes memory stats
 ```
 
 ## SDK Usage
 
 ```python
-from openjarvis import Jarvis
+from nes import NES
 
-j = Jarvis()
+j = NES()
 
 # Index documents
 result = j.memory.index("./docs/", chunk_size=512, chunk_overlap=64)

@@ -9,9 +9,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from openjarvis.core.config import GpuInfo, HardwareInfo
-from openjarvis.core.events import EventBus, reset_event_bus
-from openjarvis.core.registry import (
+from nes.core.config import GpuInfo, HardwareInfo
+from nes.core.events import EventBus, reset_event_bus
+from nes.core.registry import (
     AgentRegistry,
     BenchmarkRegistry,
     ChannelRegistry,

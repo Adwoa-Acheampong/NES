@@ -1,0 +1,59 @@
+{
+  "_comment": "OpenClaw command descriptor for Tier 1 local image generation through ComfyUI.",
+  "name": "generate_image",
+  "description": "Generate a still image, hero background, concept frame, thumbnail, or product visual through the local ComfyUI image workflow.",
+  "trigger_examples": [
+    "make a hero image for the estate landing page",
+    "generate a dark luxury thumbnail for this fragrance",
+    "create a concept frame for the car showroom"
+  ],
+  "parameters": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": "Output base name, e.g. estate-hero or crushed-thumbnail"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "Full visual prompt to pass to ComfyUI"
+    },
+    "workflow": {
+      "type": "string",
+      "required": false,
+      "description": "Optional workflow filename in pipeline/media/workflows"
+    },
+    "width": {
+      "type": "integer",
+      "required": false
+    },
+    "height": {
+      "type": "integer",
+      "required": false
+    },
+    "steps": {
+      "type": "integer",
+      "required": false
+    },
+    "seed": {
+      "type": "integer",
+      "required": false
+    }
+  },
+  "command": {
+    "windows": "cmd /c \"cd /d \"%BLKK_SITE%\" && python pipeline\\media\\gen_image.py --name \"{name}\" --prompt \"{prompt}\" {workflow_flag} {width_flag} {height_flag} {steps_flag} {seed_flag}\"",
+    "posix": "bash -lc 'cd \"$BLKK_SITE\" && python3 pipeline/media/gen_image.py --name \"{name}\" --prompt \"{prompt}\" {workflow_flag} {width_flag} {height_flag} {steps_flag} {seed_flag}'"
+  },
+  "env": {
+    "BLKK_SITE": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/blkklegacy web platform"
+  },
+  "returns": "Relay the line beginning IMAGE_RESULT_JSON= back to the user.",
+  "notes": [
+    "workflow_flag => '--workflow \"<workflow>\"' or empty.",
+    "width_flag => '--width <value>' or empty.",
+    "height_flag => '--height <value>' or empty.",
+    "steps_flag => '--steps <value>' or empty.",
+    "seed_flag => '--seed <value>' or empty.",
+    "Publishing generated images is a separate approval-gated step unless the user explicitly requested local-only generation."
+  ]
+}

@@ -1,4 +1,4 @@
-"""Tests for the persistent fact store (openjarvis.memory.store)."""
+"""Tests for the persistent fact store (nes.memory.store)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from openjarvis.core.registry import FactStoreRegistry
-from openjarvis.memory.store import (
+from nes.core.registry import FactStoreRegistry
+from nes.memory.store import (
     LocalFactStore,
     create_fact_store,
     load_configured_facts,
@@ -137,7 +137,7 @@ def test_create_fact_store_uses_fact_store_registry(tmp_path):
     assert isinstance(store, CustomFactStore)
 
 
-def test_create_fact_store_default_path_uses_openjarvis_home(tmp_path, monkeypatch):
+def test_create_fact_store_default_path_uses_nes_home(tmp_path, monkeypatch):
     monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path))
 
     store = create_fact_store("local")

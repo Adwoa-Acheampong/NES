@@ -1,0 +1,16 @@
+# OpenAI Codex CLI MCP config for the UE 5.8 built-in MCP plugin.
+# Merge into ~/.codex/config.toml (global) or <project>/.codex/config.toml.
+# Replace <PORT> with the real port shown in UE (Edit > Plugins > MCP, or the
+# Output Log). The Editor must be running with the plugin + Toolset registries
+# enabled for this to resolve.
+
+[mcp_servers.unreal-engine]
+url = "http://localhost:<PORT>/mcp"
+tool_timeout_sec = 120
+
+# If your plugin build exposes a stdio bridge instead of HTTP, use a command
+# form instead (see plugin docs), e.g.:
+# [mcp_servers.unreal-engine]
+# command = "C:/path/to/ue-mcp-bridge.exe"
+# args = []
+# tool_timeout_sec = 120

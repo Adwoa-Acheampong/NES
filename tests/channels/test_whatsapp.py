@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openjarvis.channels._stubs import ChannelStatus
-from openjarvis.channels.whatsapp import WhatsAppChannel
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.registry import ChannelRegistry
+from nes.channels._stubs import ChannelStatus
+from nes.channels.whatsapp import WhatsAppChannel
+from nes.core.events import EventBus, EventType
+from nes.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 

@@ -1,4 +1,4 @@
-"""Regression: ``jarvis serve`` must wire the ``SystemPromptBuilder`` into the
+"""Regression: ``nes serve`` must wire the ``SystemPromptBuilder`` into the
 agent it constructs, so SOUL.md / MEMORY.md / USER.md reach the model over HTTP.
 
 ``cli/ask.py`` (and ``cli/chat_cmd.py`` and the managed-agent executor) have
@@ -22,14 +22,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from openjarvis.cli import cli
+from nes.cli import cli
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
 
-# ``openjarvis.cli.serve`` as a package attribute resolves to the click
+# ``nes.cli.serve`` as a package attribute resolves to the click
 # *command* (re-exported); grab the real module to monkeypatch its globals.
-serve_mod = importlib.import_module("openjarvis.cli.serve")
+serve_mod = importlib.import_module("nes.cli.serve")
 
 
 def _fake_engine() -> MagicMock:
@@ -51,12 +51,12 @@ def test_serve_wires_persona_builder_into_served_agent(
     """The agent built on the serve path must carry a SystemPromptBuilder whose
     assembled prompt includes SOUL.md content (regression for the HTTP persona
     loss)."""
-    from openjarvis.agents.monitor_operative import MonitorOperativeAgent
-    from openjarvis.agents.operative import OperativeAgent
-    from openjarvis.agents.orchestrator import OrchestratorAgent
-    from openjarvis.agents.simple import SimpleAgent
-    from openjarvis.core.config import JarvisConfig
-    from openjarvis.core.registry import AgentRegistry
+    from nes.agents.monitor_operative import MonitorOperativeAgent
+    from nes.agents.operative import OperativeAgent
+    from nes.agents.orchestrator import OrchestratorAgent
+    from nes.agents.simple import SimpleAgent
+    from nes.core.config import NESConfig
+    from nes.core.registry import AgentRegistry
 
     # Persona file with a unique sentinel we can grep for in the built prompt.
     soul = tmp_path / "SOUL.md"
@@ -72,7 +72,7 @@ def test_serve_wires_persona_builder_into_served_agent(
     if not AgentRegistry.contains(agent_name):
         AgentRegistry.register_value(agent_name, agent_classes[agent_name])
 
-    config = JarvisConfig()
+    config = NESConfig()
     config.server.host = "127.0.0.1"
     config.server.port = 8123
     config.intelligence.default_model = "test-model"
@@ -96,7 +96,7 @@ def test_serve_wires_persona_builder_into_served_agent(
     sec.engine = engine
     sec.capability_policy = None
     sec.audit_logger = None
-    monkeypatch.setattr("openjarvis.security.setup_security", lambda *a, **k: sec)
+    monkeypatch.setattr("nes.security.setup_security", lambda *a, **k: sec)
 
     captured: dict = {}
 
@@ -105,7 +105,7 @@ def test_serve_wires_persona_builder_into_served_agent(
         return MagicMock(name="app")
 
     with (
-        patch("openjarvis.server.app.create_app", side_effect=_capture_create_app),
+        patch("nes.server.app.create_app", side_effect=_capture_create_app),
         patch("uvicorn.run", lambda *a, **k: None),
     ):
         result = CliRunner().invoke(

@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from openjarvis.core.config import (
+from nes.core.config import (
     DeepResearchConfig,
     HardwareInfo,
-    JarvisConfig,
+    NESConfig,
     generate_default_toml,
     load_config,
     validate_config_key,
@@ -17,7 +17,7 @@ from openjarvis.core.config import (
 
 
 def test_deep_research_config_defaults_to_chat_selection() -> None:
-    cfg = JarvisConfig()
+    cfg = NESConfig()
 
     assert isinstance(cfg.deep_research, DeepResearchConfig)
     assert cfg.deep_research.engine == ""

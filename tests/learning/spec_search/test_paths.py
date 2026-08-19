@@ -1,4 +1,4 @@
-"""Tests for openjarvis.learning.spec_search.storage.paths module."""
+"""Tests for nes.learning.spec_search.storage.paths module."""
 
 from __future__ import annotations
 
@@ -15,18 +15,18 @@ class TestResolveSpecSearchRoot:
     """Tests for resolve_spec_search_root()."""
 
     def test_default_is_under_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         monkeypatch.delenv("OPENJARVIS_HOME", raising=False)
         result = paths.resolve_spec_search_root()
-        assert result == Path.home() / ".openjarvis" / "learning"
+        assert result == Path.home() / ".nes" / "learning"
 
-    def test_respects_openjarvis_home_env_var(
+    def test_respects_nes_home_env_var(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         custom = tmp_path / "custom_oj"
         monkeypatch.setenv("OPENJARVIS_HOME", str(custom))
@@ -38,7 +38,7 @@ class TestResolveSpecSearchRoot:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "rel"))
         result = paths.resolve_spec_search_root()
@@ -48,9 +48,9 @@ class TestResolveSpecSearchRoot:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
-        # Find the OpenJarvis source root by walking up from the paths module.
+        # Find the NES source root by walking up from the paths module.
         source_root = paths._find_source_root()
         assert source_root is not None  # We must be running inside the repo.
 
@@ -61,7 +61,7 @@ class TestResolveSpecSearchRoot:
             paths.resolve_spec_search_root()
 
     def test_find_source_root_returns_repo_root(self) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         result = paths._find_source_root()
         assert result is not None
@@ -81,7 +81,7 @@ class TestEnsureSpecSearchDirs:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "oj"))
         root = paths.ensure_spec_search_dirs()
@@ -97,7 +97,7 @@ class TestEnsureSpecSearchDirs:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from openjarvis.learning.spec_search.storage import paths
+        from nes.learning.spec_search.storage import paths
 
         monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "oj"))
         first = paths.ensure_spec_search_dirs()

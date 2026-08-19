@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from openjarvis.agents._stubs import (
+from nes.agents._stubs import (
     AgentContext,
     AgentResult,
     BaseAgent,
     ToolUsingAgent,
 )
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.types import Conversation, Message, Role, ToolCall, ToolResult
-from openjarvis.tools._stubs import BaseTool, ToolSpec
+from nes.core.events import EventBus, EventType
+from nes.core.types import Conversation, Message, Role, ToolCall, ToolResult
+from nes.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Concrete subclass for testing
@@ -163,11 +163,11 @@ class TestBuildMessages:
         assert messages[1].role == Role.USER
 
     def test_empty_config_default_no_system_message(self, monkeypatch):
-        from openjarvis.core.config import JarvisConfig
+        from nes.core.config import NESConfig
 
-        empty_cfg = JarvisConfig()
+        empty_cfg = NESConfig()
         empty_cfg.agent.default_system_prompt = ""
-        monkeypatch.setattr("openjarvis.agents._stubs.load_config", lambda: empty_cfg)
+        monkeypatch.setattr("nes.agents._stubs.load_config", lambda: empty_cfg)
 
         engine = MagicMock()
         agent = _ConcreteAgent(engine, "m")
@@ -208,7 +208,7 @@ class TestBuildMessages:
     def test_prompt_builder_merges_context_system_message(self):
         engine = MagicMock()
         prompt_builder = MagicMock()
-        prompt_builder.build.return_value = "You are OpenJarvis."
+        prompt_builder.build.return_value = "You are NES."
         agent = _ConcreteAgent(engine, "m", prompt_builder=prompt_builder)
         conv = Conversation()
         conv.add(
@@ -224,7 +224,7 @@ class TestBuildMessages:
 
         system_messages = [m for m in messages if m.role == Role.SYSTEM]
         assert len(system_messages) == 1
-        assert "You are OpenJarvis." in system_messages[0].content
+        assert "You are NES." in system_messages[0].content
         assert "user likes jazz" in system_messages[0].content
 
     def test_prompt_builder_preserves_caller_system_context(self):

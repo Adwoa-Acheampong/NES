@@ -1,0 +1,112 @@
+{
+  "_comment": "Copy this to config.json and fill in real paths. config.json is gitignored. All paths are Windows-style; use double backslashes or forward slashes.",
+
+  "unreal": {
+    "editor_cmd": "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor-Cmd.exe",
+    "project": "C:/Users/lenovo/OneDrive/Desktop/Black Star Legacy/blkk-legacy/StagingUE/BlkkLegacy.uproject",
+    "master_levels": {
+      "architecture": "/Game/Maps/MasterLevel_Estate",
+      "automotive": "/Game/Maps/MasterLevel_Showroom"
+    },
+    "render_preset_cinematic": "/Game/Cinematics/MRQ_Preset_4K",
+    "panorama_plugin": "PanoramicCapture",
+    "panorama_resolution": [8192, 4096]
+  },
+
+  "paths": {
+    "hot_folder": "pipeline/hot_folder",
+    "output_renders": "pipeline/output/renders",
+    "output_panoramas": "pipeline/output/panoramas",
+    "output_cinematics": "pipeline/output/cinematics",
+    "site_assets": "assets",
+    "site_tours": "tours",
+    "assets_manifest": "assets-manifest.json"
+  },
+
+  "intake": {
+    "_comment": "Assets do not exist yet. When you produce them, export to ONE of these and drop into hot_folder. Datasmith (.udatasmith) is preferred for architecture; FBX/GLB for automotive.",
+    "accepted_formats": [".udatasmith", ".fbx", ".obj", ".glb", ".gltf"],
+    "category_by_keyword": {
+      "automotive": ["car", "vehicle", "auto", "showroom"],
+      "architecture": ["house", "villa", "estate", "home", "floorplan", "building"]
+    }
+  },
+
+  "tour": {
+    "type": "both",
+    "pannellum_version": "2.5.6",
+    "default_hfov": 110,
+    "auto_rotate_speed": -2
+  },
+
+  "pixel_streaming": {
+    "enabled": true,
+    "signalling_server_url": "wss://stream.blkklegacy.com",
+    "gpu_host_note": "On-demand cloud GPU (AWS g5.xlarge / Tensordock / Vast.ai). Spin up only for flagship projects; see README section 6."
+  },
+
+  "media": {
+    "_comment": "Tier 1/2 local generation via ComfyUI (no Unreal). Set node ids after exporting your API-format workflows; see pipeline/media/workflows/README.md.",
+    "comfyui_host": "http://127.0.0.1:8188",
+    "image": {
+      "workflow": "flux_image.api.json",
+      "width": 1600,
+      "height": 900,
+      "steps": 28,
+      "seed": -1,
+      "negative": "lowres, text, watermark, deformed",
+      "timeout_sec": 600,
+      "nodes": {
+        "positive": { "node": "6", "field": "text" },
+        "negative": { "node": "7", "field": "text" },
+        "width": { "node": "5", "field": "width" },
+        "height": { "node": "5", "field": "height" },
+        "steps": { "node": "3", "field": "steps" },
+        "seed": { "node": "3", "field": "seed" }
+      }
+    },
+    "video": {
+      "workflow": "wan_i2v.api.json",
+      "frames": 49,
+      "fps": 16,
+      "seed": -1,
+      "timeout_sec": 1800,
+      "nodes": {
+        "positive": { "node": "6", "field": "text" },
+        "image": { "node": "52", "field": "image" },
+        "frames": { "node": "40", "field": "length" },
+        "fps": { "node": "41", "field": "fps" },
+        "seed": { "node": "3", "field": "seed" }
+      }
+    }
+  },
+
+  "publish": {
+    "method": "git",
+    "_method_options": ["git", "sftp", "s3", "none"],
+    "git": {
+      "remote": "origin",
+      "branch": "main",
+      "commit_prefix": "media: "
+    },
+    "sftp": {
+      "host": "",
+      "port": 22,
+      "username": "",
+      "remote_root": "/var/www/blkklegacy",
+      "_password_note": "NEVER store passwords here. Use an SSH key (key_path) or set BLKK_SFTP_PASSWORD as an environment variable.",
+      "key_path": ""
+    },
+    "s3": {
+      "bucket": "",
+      "prefix": "",
+      "cloudfront_distribution_id": ""
+    }
+  },
+
+  "notify": {
+    "_comment": "OpenClaw handles messaging. These are echoed into the pipeline log and returned to the orchestrator.",
+    "on_success": "Pipeline complete: {project} -> {n_panoramas} panoramas, {n_cinematics} cinematics, published via {method}.",
+    "on_failure": "Pipeline FAILED at stage '{stage}' for {project}: {error}"
+  }
+}

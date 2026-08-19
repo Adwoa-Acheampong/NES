@@ -1,4 +1,4 @@
-"""Tests for ``jarvis config set`` command."""
+"""Tests for ``nes config set`` command."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from openjarvis.cli import cli
+from nes.cli import cli
 
 
 class TestConfigSet:
@@ -32,7 +32,7 @@ class TestConfigSet:
         env = {"OPENJARVIS_CONFIG": str(config_file)}
         with (
             mock.patch.dict(os.environ, env),
-            mock.patch("openjarvis.cli.config_cmd.httpx"),
+            mock.patch("nes.cli.config_cmd.httpx"),
         ):
             result = CliRunner().invoke(
                 cli,
@@ -115,7 +115,7 @@ class TestConfigSet:
         env = {"OPENJARVIS_CONFIG": str(config_file)}
         with (
             mock.patch.dict(os.environ, env),
-            mock.patch("openjarvis.cli.config_cmd.httpx") as mock_httpx,
+            mock.patch("nes.cli.config_cmd.httpx") as mock_httpx,
         ):
             mock_httpx.get.return_value = mock.Mock(status_code=200)
             result = CliRunner().invoke(
@@ -132,7 +132,7 @@ class TestConfigSet:
         env = {"OPENJARVIS_CONFIG": str(config_file)}
         with (
             mock.patch.dict(os.environ, env),
-            mock.patch("openjarvis.cli.config_cmd.httpx") as mock_httpx,
+            mock.patch("nes.cli.config_cmd.httpx") as mock_httpx,
         ):
             mock_httpx.get.side_effect = Exception("Connection refused")
             result = CliRunner().invoke(

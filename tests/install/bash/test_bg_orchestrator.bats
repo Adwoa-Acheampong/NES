@@ -2,7 +2,7 @@
 
 setup() {
     TEST_TMPDIR=$(mktemp -d)
-    export OPENJARVIS_HOME="$TEST_TMPDIR/.openjarvis"
+    export OPENJARVIS_HOME="$TEST_TMPDIR/.nes"
     mkdir -p "$OPENJARVIS_HOME/.state/models"
     mkdir -p "$OPENJARVIS_HOME/.scripts"
     # Provide mock scripts that all return success and write the expected state files.
